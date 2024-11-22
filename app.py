@@ -1,19 +1,18 @@
 from flask import Flask, render_template, request, jsonify, send_file
+from flask_caching import Cache
 from src.metadata import TikTokMetaData
 import pandas as pd
 import io
 import json
-from collections import OrderedDict
 import logging
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-scraper = TikTokMetaData()
+# Configure Flask-Caching
+cache = Cache(app, config={'CACHE_TYPE': 'filesystem', 'CACHE_DIR': '/tmp/flask_cache'})
 
-# In-memory cache with OrderedDict to limit its size
-cache = OrderedDict()
-MAX_CACHE_SIZE = 100
+scraper = TikTokMetaData()
 
 @app.route('/')
 def index():
@@ -26,14 +25,8 @@ async def scrape():
     videos = await scraper.get_user_videos(username)
     if videos:
         # Store in cache
-        cache[username] = videos
+        cache.set(username, videos, timeout=3600)  # Cache for 1 hour
         logging.debug(f"Stored {len(videos)} videos in cache for {username}")
-        logging.debug(f"Current cache keys after scraping: {list(cache.keys())}")
-        # Limit cache size
-        if len(cache) > MAX_CACHE_SIZE:
-            oldest = next(iter(cache))
-            del cache[oldest]
-            logging.debug(f"Removed oldest entry from cache: {oldest}")
         return jsonify({'success': True, 'message': f'Scraped {len(videos)} videos for @{username}', 'videoCount': len(videos)})
     logging.error(f"Failed to scrape videos for {username}")
     return jsonify({'success': False, 'message': 'Failed to scrape videos'})
@@ -42,7 +35,6 @@ async def scrape():
 def download(format):
     username = request.args.get('username', '').lower()  # Normalize username
     logging.debug(f"Attempting to download data for username: {username}")
-    logging.debug(f"Current cache keys before download: {list(cache.keys())}")
     data = cache.get(username)
     
     if not data:
