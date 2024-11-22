@@ -19,7 +19,6 @@ async def scrape():
     username = request.form['username']
     videos = await scraper.get_user_videos(username)
     if videos:
-        setattr(scraper, f'{username}_data', videos)
         return jsonify({'success': True, 'message': f'Scraped {len(videos)} videos for @{username}', 'videoCount': len(videos)})
     return jsonify({'success': False, 'message': 'Failed to scrape videos'})
 
