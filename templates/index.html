@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Metadata Scraper</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>TikTok Metadata Scraper</h1>
+        <form id="scrapeForm">
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <span class="at-symbol">@</span>
+                    <input type="text" id="username" placeholder="Enter TikTok Username" required>
+                    <div id="validation-message"></div>
+                </div>
+                <button type="submit">Scrape Metadata</button>
+            </div>
+        </form>
+        <div id="progress-container" style="display: none;">
+            <div id="progress-bar"></div>
+        </div>
+        <div id="message"></div>
+        <div id="results" style="display: none;">
+            <h2>Scraping Results</h2>
+            <p>Videos scraped: <span id="videoCount"></span></p>
+            <div id="downloadButtons">
+                <button onclick="downloadData('json')">Download JSON</button>
+                <button onclick="downloadData('csv')">Download CSV</button>
+                <button onclick="downloadData('excel')">Download Excel</button>
+            </div>
+        </div>
+    </div>
+    <footer class="disclaimer">
+        <p>Made by Zuhair Aziz</p>
+    </footer>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+
