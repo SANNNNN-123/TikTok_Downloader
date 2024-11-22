@@ -1,14 +1,20 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from src.metadata import TikTokMetaData
 import pandas as pd
-import asyncio
-import os
 import json
 import io
-import yt_dlp
+from collections import OrderedDict
+import logging
+
 
 app = Flask(__name__)
 scraper = TikTokMetaData()
+
+# In-memory cache with OrderedDict to limit its size
+logging.basicConfig(level=logging.DEBUG)
+cache = OrderedDict()
+MAX_CACHE_SIZE = 100  # Adjust this value based on your needs
+
 
 @app.route('/')
 def index():
@@ -16,16 +22,30 @@ def index():
 
 @app.route('/scrape', methods=['POST'])
 async def scrape():
-    username = request.form['username']
+    username = request.form['username'].lower()  # Normalize username
+    logging.debug(f"Scraping data for username: {username}")
     videos = await scraper.get_user_videos(username)
     if videos:
+        # Store in cache
+        cache[username] = videos
+        logging.debug(f"Stored {len(videos)} videos in cache for {username}")
+        # Limit cache size
+        if len(cache) > MAX_CACHE_SIZE:
+            oldest = next(iter(cache))
+            del cache[oldest]
+            logging.debug(f"Removed oldest entry from cache: {oldest}")
         return jsonify({'success': True, 'message': f'Scraped {len(videos)} videos for @{username}', 'videoCount': len(videos)})
+    logging.error(f"Failed to scrape videos for {username}")
     return jsonify({'success': False, 'message': 'Failed to scrape videos'})
 
 @app.route('/download/<format>')
 def download(format):
-    username = request.args.get('username')
-    data = scraper.load_profile_data(username)
+    username = request.args.get('username', '').lower()  # Normalize username
+    logging.debug(f"Attempting to download data for username: {username}")
+    logging.debug(f"Current cache keys: {list(cache.keys())}")
+    data = cache.get(username)
+   
+    #data = scraper.load_profile_data(username)
     
     if not data:
         return jsonify({'success': False, 'message': 'No data found for this username'})
