@@ -29,6 +29,7 @@ Simple UI that allows users extract metadata from TikTok user profiles and downl
 
 2. **Run via Docker**
 
+    ```bash
     git clone https://github.com/SANNNNN-123/TikTok_Downloader.git
     cd path/TikTok_Downloader
     docker build -t TikTok_Downloader .
