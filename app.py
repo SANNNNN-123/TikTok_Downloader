@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_caching import Cache
 from src.metadata import TikTokMetaData
+from src.scraper import get_user_info
 import pandas as pd
 import io
 import json
 import logging
+import asyncio
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -22,14 +24,30 @@ def index():
 async def scrape():
     username = request.form['username'].lower()  # Normalize username
     logging.debug(f"Scraping data for username: {username}")
-    videos = await scraper.get_user_videos(username)
-    if videos:
+
+    # Run both scraping functions concurrently
+    user_info_task = asyncio.create_task(get_user_info(username))
+    videos_task = asyncio.create_task(scraper.get_user_videos(username))
+
+    user_info, videos = await asyncio.gather(user_info_task, videos_task)
+
+    if user_info and videos:
+        # Combine user info and videos data
+        data = {
+            'user_info': user_info,
+            'videos': videos
+        }
         # Store in cache
-        cache.set(username, videos, timeout=3600)  # Cache for 1 hour
-        logging.debug(f"Stored {len(videos)} videos in cache for {username}")
-        return jsonify({'success': True, 'message': f'Scraped {len(videos)} videos for @{username}', 'videoCount': len(videos)})
-    logging.error(f"Failed to scrape videos for {username}")
-    return jsonify({'success': False, 'message': 'Failed to scrape videos'})
+        cache.set(username, data, timeout=3600)  # Cache for 1 hour
+        logging.debug(f"Stored user info and {len(videos)} videos in cache for {username}")
+        return jsonify({
+            'success': True,
+            'message': f'Scraped {len(videos)} videos for @{username}',
+            'videoCount': len(videos),
+            'userInfo': user_info
+        })
+    logging.error(f"Failed to scrape data for {username}")
+    return jsonify({'success': False, 'message': 'Failed to scrape data'})
 
 @app.route('/download/<format>')
 def download(format):
@@ -48,10 +66,10 @@ def download(format):
             io.BytesIO(json.dumps(data, indent=2).encode()),
             mimetype='application/json',
             as_attachment=True,
-            download_name=f'{username}_videos.json'
+            download_name=f'{username}_data.json'
         )
     elif format in ['csv', 'excel']:
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(data['videos'])
         output = io.BytesIO()
         if format == 'csv':
             df.to_csv(output, index=False)

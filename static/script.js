@@ -1,14 +1,19 @@
+let typingTimer;
+const doneTypingInterval = 500; // milliseconds
+
 document.getElementById('scrapeForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const username = document.getElementById('username').value;
+    const username = document.getElementById('username').value.trim();
     const messageDiv = document.getElementById('message');
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const results = document.getElementById('results');
+    const userProfile = document.getElementById('user-profile');
 
     messageDiv.textContent = '';
     progressContainer.style.display = 'block';
-    results.style.display = 'none';
+    results.style.display = 'none';  // Hide results initially
+    userProfile.style.display = 'none';
 
     let progress = 0;
     const progressInterval = setInterval(() => {
@@ -34,10 +39,10 @@ document.getElementById('scrapeForm').addEventListener('submit', function(e) {
         setTimeout(() => {
             progressContainer.style.display = 'none';
             if (data.success) {
-                messageDiv.textContent = data.message;
-                messageDiv.style.color = 'green';
+                displayUserProfile(data.userInfo);
+                userProfile.style.display = 'flex';
                 document.getElementById('videoCount').textContent = data.videoCount;
-                results.style.display = 'block';
+                // Remove the results.style.display = 'block' from here
             } else {
                 messageDiv.textContent = data.message;
                 messageDiv.style.color = 'red';
@@ -53,8 +58,21 @@ document.getElementById('scrapeForm').addEventListener('submit', function(e) {
     });
 });
 
-function downloadData(format) {
-    const username = document.getElementById('username').value;
-    window.location.href = `/download/${format}?username=${encodeURIComponent(username)}`;
+function displayUserProfile(userInfo) {
+    document.getElementById('profile-pic').src = userInfo.profile_pic;
+    document.getElementById('profile-name').textContent = userInfo.name;
+    document.getElementById('following').textContent = `Following: ${userInfo.following}`;
+    document.getElementById('followers').textContent = `Followers: ${userInfo.followers}`;
+    document.getElementById('likes').textContent = `Likes: ${userInfo.likes}`;
 }
 
+document.getElementById('select-profile').addEventListener('click', function() {
+    const results = document.getElementById('results');
+    // Simply show the results section - the videoCount is already set from the fetch
+    results.style.display = 'block';
+});
+
+function downloadData(format) {
+    const username = document.getElementById('username').value.trim();
+    window.location.href = `/download/${format}?username=${encodeURIComponent(username)}`;
+}
