@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div class="download-section">
+    <h3>Download Data</h3>
+    <div id="downloadButtons">
+        <button onclick="downloadData('json')">Download JSON</button>
+        <button onclick="downloadData('csv')">Download CSV</button>
+        <button onclick="downloadData('excel')">Download Excel</button>
+    </div>
+</div>
+
+
+{% endblock %}

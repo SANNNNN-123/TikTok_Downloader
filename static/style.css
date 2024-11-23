@@ -1,219 +1,276 @@
-body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f0f2f5;
+* {
     margin: 0;
     padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding-bottom: 60px;
-    position: relative;
+    box-sizing: border-box;
 }
 
-.container {
-    max-width: 600px;
-    width: 90%;
-    background-color: #ffffff;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
-}
-
-h1 {
-    text-align: center;
-    color: #333;
-    margin-bottom: 2rem;
-}
-
-h2 {
-    color: #444;
-    margin-top: 2rem;
-}
-
-.input-group {
-    display: flex;
-    margin-bottom: 1rem;
-    align-items: stretch; 
-    gap: 0;
-}
-
-input[type="text"] {
-    flex-grow: 1;
-    padding: 0.75rem;
-    font-size: 1rem;
-    border: 2px solid #ddd;
-    border-radius: 4px 0 0 4px;
-    transition: border-color 0.3s;
-}
-
-input[type="text"]:focus {
-    outline: none;
-    border-color: #4CAF50;
-}
-
-button {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    white-space: nowrap;
-}
-
-button:hover {
-    background-color: #45a049;
-}
-
-form button {
-    border-radius: 0 4px 4px 0;
-}
-
-
-
-#message {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    border-radius: 4px;
-    font-weight: bold;
-}
-
-#downloadButtons {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 1rem;
-}
-
-#downloadButtons button {
-    flex-basis: 30%;
-    border-radius: 4px;
-}
-
-#progress-container {
-    width: 100%;
-    background-color: #f0f0f0;
-    border-radius: 10px;
-    margin: 20px 0;
-    overflow: hidden;
-}
-
-#progress-bar {
-    width: 0;
-    height: 10px; /* Updated height */
-    background-color: #4CAF50;
-    transition: width 0.5s ease;
-}
-
-#results {
-    background-color: #e8f5e9;
-    border-radius: 8px;
-    padding: 1rem;
-    margin-top: 2rem;
-}
-
-#videoCount {
-    font-weight: bold;
-    color: #4CAF50;
-}
-
-
-.input-wrapper {
-    position: relative;
-    flex: 1;
-    min-width: 0;
-}
-
-.at-symbol {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #666;
-    font-size: 1rem;
-    z-index: 1;
-    pointer-events: none;
-}
-
-input[type="text"] {
-    width: 100%;
-    height: 100%; /* Match button height */
-    padding: 0.75rem 0.75rem 0.75rem 2rem;
-    font-size: 1rem;
-    border: 2px solid #ddd;
-    border-radius: 4px 0 0 4px;
-    transition: all 0.3s ease;
-    background-color: #fff;
-    box-sizing: border-box; /* Include padding and border in width */
-}
-
-input[type="text"]:focus {
-    outline: none;
-    border-color: #4CAF50;
-    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
-}
-
-
-.disclaimer {
-    text-align: center;
-    padding: 1rem;
+body {
+    font-family: Arial, sans-serif;
     background-color: #f0f2f5;
+}
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #1A1A1A;
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-title {
+    font-size: 24px;
+    margin-bottom: 30px;
+}
+
+.sidebar-nav {
+    flex-grow: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    color: #999;
+    text-decoration: none;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.nav-item:hover, .nav-item.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.nav-item svg {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+}
+
+.sidebar-footer {
+    font-size: 12px;
     color: #666;
-    font-size: 0.9rem;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    text-align: center;
+}
+
+.content {
+    flex-grow: 1;
+    padding: 20px;
+}
+
+.search-page {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.search-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.search-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.platform-select {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.tiktok-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.search-input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.btn-outline {
+    background-color: transparent;
+    border: 1px solid #ddd;
+    color: #333;
+}
+
+.btn-primary {
+    background-color: #333; /* Set default background color */
+    color: white; /* Keep text color white */
+    border: none; /* Optional: Remove border */
+    transition: background-color 0.3s ease; /* Smooth transition for hover */
+}
+
+.btn-primary:hover {
+    background-color: #5a2ead; /* Hover background color */
 }
 
 
-
-#user-profile {
+.search-results {
     margin-top: 20px;
-    padding: 15px;
+}
+
+.search-result {
+    background-color: white;
     border: 1px solid #ddd;
-    border-radius: 8px;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+}
+
+.search-result-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 15px;
+}
+
+.search-result-info {
+    flex-grow: 1;
+}
+
+.search-result-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.search-result-followers {
+    color: #666;
+    font-size: 14px;
+}
+
+.verified-icon {
+    width: 16px;
+    height: 16px;
+    margin-left: 5px;
 }
 
 .profile-info {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.profile-header {
     display: flex;
     align-items: center;
 }
 
 .profile-pic {
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    margin-right: 15px;
+    margin-right: 20px;
 }
 
-.profile-details h2 {
-    margin: 0;
+.profile-details {
+    flex-grow: 1;
+}
+
+.profile-name-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.profile-name-row h3 {
     font-size: 1.2em;
+    margin-right: 5px;
+}
+
+.verified-icon {
+    width: 20px;
+    height: 20px;
 }
 
 .profile-stats {
     display: flex;
-    gap: 10px;
+    gap: 20px;
+}
+
+.profile-stats span {
     font-size: 0.9em;
     color: #666;
 }
 
+.profile-info {
+    position: relative; 
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
 .select-btn {
-    padding: 8px 15px;
-    background-color: #4CAF50;
-    color: white;
+    position: absolute; 
+    top: 30px; 
+    right: 20px; 
+    padding: 10px 15px;
     border: none;
-    border-radius: 4px;
+    background-color: #333;
+    color: white;
+    border-radius: 5px;
     cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
 }
 
 .select-btn:hover {
-    background-color: #45a049;
+    background-color: #5a2ead;
+}
+
+
+/* Download section  */
+.download-section {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.downloadButtons {
+    margin: 20px;
+    padding: 12px 24px;
+    border: none;   
+    border-radius: 8px;
+    background-color: #333;
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.downloadButtons:hover {
+    background-color: #5a2ead;
+    transform: scale(1.05); /* Slightly enlarge the button on hover */
 }
 

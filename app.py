@@ -17,12 +17,27 @@ cache = Cache(app, config={'CACHE_TYPE': 'filesystem', 'CACHE_DIR': '/tmp/flask_
 scraper = TikTokMetaData()
 
 @app.route('/')
+@app.route('/search')
 def index():
-    return render_template('index.html')
+    return render_template('search.html')
 
-@app.route('/scrape', methods=['POST'])
+@app.route('/overview')
+def overview():
+    return render_template('overview.html')
+
+@app.route('/analytics')
+def analytics():
+    return render_template('analytics.html')
+
+@app.route('/download')
+def download_page():
+    return render_template('download.html')
+
+
+@app.route('/api/search', methods=['POST'])
+#@app.route('/scrape', methods=['POST'])
 async def scrape():
-    username = request.form['username'].lower()  # Normalize username
+    username = request.form['name'].lower()  # Normalize username
     logging.debug(f"Scraping data for username: {username}")
 
     # Run both scraping functions concurrently
@@ -32,7 +47,7 @@ async def scrape():
     user_info, videos = await asyncio.gather(user_info_task, videos_task)
 
     if user_info and videos:
-        # Combine user info and videos data
+        # Both user info and videos exist
         data = {
             'user_info': user_info,
             'videos': videos
@@ -42,12 +57,24 @@ async def scrape():
         logging.debug(f"Stored user info and {len(videos)} videos in cache for {username}")
         return jsonify({
             'success': True,
-            'message': f'Scraped {len(videos)} videos for @{username}',
+            'message': f'Found {len(videos)} videos from @{username}',
             'videoCount': len(videos),
             'userInfo': user_info
         })
-    logging.error(f"Failed to scrape data for {username}")
-    return jsonify({'success': False, 'message': 'Failed to scrape data'})
+    elif user_info and not videos:
+        # User exists but no videos (private profile)
+        logging.info(f"Profile is private for {username}")
+        return jsonify({
+            'success': False,
+            'message': 'This user has a private profile, and no data is available.'
+        })
+    else:
+        # Neither user info nor videos exist (user doesn't exist)
+        logging.error(f"User {username} does not exist")
+        return jsonify({
+            'success': False,
+            'message': 'The user does not exist.'
+        })
 
 @app.route('/download/<format>')
 def download(format):

@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>TikTok Metadata Scraper</h1>
+        <h1>TikTok Analytics</h1>
         <form id="scrapeForm">
             <div class="input-group">
                 <div class="input-wrapper">
@@ -17,7 +17,7 @@
                     <input type="text" id="username" placeholder="Enter TikTok Username" required>
                     <div id="validation-message"></div>
                 </div>
-                <button type="submit">Scrape Metadata</button>
+                <button type="submit">Find Profile</button>
             </div>
         </form>
         <div id="progress-container" style="display: none;">
@@ -28,7 +28,15 @@
             <div class="profile-info">
                 <img id="profile-pic" src="" alt="Profile Picture" class="profile-pic">
                 <div class="profile-details">
-                    <h2 id="profile-name"></h2>
+                    <div class="name-row">
+                        <h2 id="profile-name"></h2>
+                        <span id="verified-icon" class="verified-icon" style="display: none;">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="10" fill="#20D5EC"/>
+                                <path d="M10.14 13.88L8.59 12.33C8.21 11.95 7.79 11.95 7.41 12.33C7.03 12.71 7.03 13.13 7.41 13.51L9.67 15.77C10.05 16.15 10.47 16.15 10.85 15.77L16.59 10.03C16.97 9.65 16.97 9.23 16.59 8.85C16.21 8.47 15.79 8.47 15.41 8.85L10.14 13.88Z" fill="white"/>
+                            </svg>
+                        </span>
+                    </div>
                     <div class="profile-stats">
                         <span id="following"></span>
                         <span id="followers"></span>
@@ -49,7 +57,7 @@
         </div>
     </div>
     <footer class="disclaimer">
-        <p>Made by Zuhair Aziz</p>
+        <p>Made by Zuhair Aziz <span class="version">v1.00</span></p>
     </footer>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
