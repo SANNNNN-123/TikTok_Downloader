@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify
 from src.metadata import TikTokMetaData
 from src.scraper import get_user_info
-from src.analytics import get_top_videos
-from src.database import get_db,init_db, Video,get_cached_user_data,store_user_data
+from src.analytics import get_top_videos,get_trends_data,get_performance_data,get_active_days_data,get_duration_analysis
+from src.database import init_db, Video,get_cached_user_data,store_user_data
 import pandas as pd
 import logging
 import asyncio
@@ -78,9 +78,46 @@ async def scrape():
     except Exception as e:
         print(f"Error analyzing profile: {e}") 
         return jsonify({'status': 'error', 'message': f'Error analyzing profile: {str(e)}'}), 500
+    
+@app.route('/api/overview/<username>')
+def get_overview_data(username):
+    try:
+        # Get trends data
+        trends_response = get_trends_data(username)
+        trends_data = trends_response.json
+
+        # Get top videos
+        videos_response = get_top_videos(username)
+        videos_data = videos_response.json  
+
+        # Get performance data
+        performance_response = get_performance_data(username)
+        performance_data = performance_response.json
+
+        # Get active days
+        activedays_response = get_active_days_data(username)
+        activedays_data = activedays_response.json
+
+        # Get duration analysis
+        duration_response = get_duration_analysis(username)
+        duration_data = duration_response.json
+ 
+        response_data = {
+            'status': 'success',
+            'trends': trends_data,
+            'topVideos': videos_data,
+            'performance_stats' : performance_data,
+            'active_days' : activedays_data,
+            'duration_breakdown' : duration_data
+
+        }
+        return jsonify(response_data)
+        
+    except Exception as e:
+        return jsonify({'status': 'error','message': str(e)}), 500
 
 
 if __name__ == '__main__':
-    init_db()
+    #init_db()
     app.run(debug=True)
 

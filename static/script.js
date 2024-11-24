@@ -20,8 +20,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const followers = document.getElementById('followers');
     const likes = document.getElementById('likes');
     const dataSource = document.getElementById('data-source');
+    const loadingState = document.getElementById('loading-state');
+    
 
-    // Search button click event listener
+    // Search functionality
     if (searchButton && searchInput && searchResults) {
         searchButton.addEventListener('click', async function (e) {
             e.preventDefault();
@@ -31,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Display a loading state
                 searchButton.disabled = true;
                 searchResults.textContent = 'Searching...';
-                profileInfo.style.display = 'none';
+                if (profileInfo) profileInfo.style.display = 'none';
 
                 try {
                     const formData = new FormData();
@@ -47,59 +49,45 @@ document.addEventListener('DOMContentLoaded', function () {
                     searchResults.textContent = ''; // Clear search results
 
                     if (data.status === 'success') {
-                        // Display a success message
+                        // Display success message
                         const successMessage = document.createElement('div');
                         successMessage.className = 'alert alert-success';
-                        
-                        // Customize message based on data source
                         const sourceText = data.source === 'cache' ? 
-                            'Retrieved from database' : 
+                            'Retrieved from cache' : 
                             'Fetched new data';
-                        
                         successMessage.textContent = `${sourceText}: Found profile data for @${username}`;
                         searchResults.appendChild(successMessage);
 
-                        // Update the profile information
+                        // Update profile information
                         if (data.profile) {
                             updateProfileDisplay(data.profile);
                             
-                            // Display data source indicator
                             if (dataSource) {
                                 dataSource.textContent = `Data source: ${data.source === 'cache' ? 'Database Cache' : 'Fresh Data'}`;
                                 dataSource.className = `badge ${data.source === 'cache' ? 'bg-info' : 'bg-success'}`;
                             }
                         }
 
-                        // Store the username in localStorage for the overview page
+                        // Store username and enable analyze button
                         localStorage.setItem('currentUsername', username);
-                        
-                        // Enable the analyze button
                         const analyzeButton = document.getElementById('analyze-profile');
                         if (analyzeButton) {
                             analyzeButton.disabled = false;
                         }
                     } else {
-                        // Display an error message
-                        const errorMessage = document.createElement('div');
-                        errorMessage.className = 'alert alert-danger';
-                        errorMessage.textContent = data.message || 'An error occurred while searching.';
-                        searchResults.appendChild(errorMessage);
+                        showError(data.message || 'An error occurred while searching.');
                     }
                 } catch (error) {
                     console.error('Error:', error);
-                    const errorElement = document.createElement('div');
-                    errorElement.className = 'alert alert-danger';
-                    errorElement.textContent =
-                        'An error occurred while searching. Please try again.';
-                    searchResults.appendChild(errorElement);
+                    showError('An error occurred while searching. Please try again.');
                 } finally {
-                    searchButton.disabled = false; // Re-enable the button
+                    searchButton.disabled = false;
                 }
             }
         });
     }
 
-    // Update the profile information display
+    // Profile display update function
     function updateProfileDisplay(userInfo) {
         if (profilePic) profilePic.src = userInfo.profile_pic || '/static/default-profile.png';
         if (profileName) profileName.textContent = userInfo.name || userInfo.username;
@@ -107,18 +95,255 @@ document.addEventListener('DOMContentLoaded', function () {
         if (followers) followers.textContent = `Followers: ${userInfo.followers?.toLocaleString() || '0'}`;
         if (likes) likes.textContent = `Likes: ${userInfo.likes?.toLocaleString() || '0'}`;
 
-        // Toggle the visibility of the verified icon
         if (verifiedIcon) {
             verifiedIcon.style.display = userInfo.is_verified ? 'inline-flex' : 'none';
         }
 
-        // Ensure the profile info section is visible
         if (profileInfo) {
             profileInfo.style.display = 'block';
         }
     }
 
-    // Analyze profile button click handler
+    // Overview page functionality
+    if (window.location.pathname === '/overview') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get('username');
+        
+        if (username) {
+            loadOverviewData(username);
+        } else {
+            hideLoading();
+            window.location.href = '/';
+        }
+    }
+
+    function showLoading() {
+        if (loadingState) {
+            loadingState.style.display = 'flex';
+            loadingState.classList.remove('hidden');
+        }
+    }
+    
+    function hideLoading() {
+        if (loadingState) {
+            loadingState.style.display = 'none';
+            loadingState.classList.add('hidden');
+        }
+    }
+
+
+    // Load overview data function
+    async function loadOverviewData(username) {
+        const trendsContainer = document.getElementById('performanceGraph');
+        const topVideosContainer = document.getElementById('topVideos');
+        const performanceStatsContainer = document.getElementById('performanceStats');
+        const durationBreakdownContainer = document.getElementById('durationBreakdown');
+        const activeDaysChartContainer = document.getElementById('activeDaysChart');
+
+        showLoading(); 
+
+        try {
+            console.log('Fetching overview data for:', username);
+            const response = await fetch(`/api/overview/${encodeURIComponent(username)}`);
+            const data = await response.json();
+            console.log('Received overview data:', data);
+
+            if (data.status === 'success') {
+                console.log('Performance Trends:', data.trends);
+                console.log('Top Videos:', data.topVideos);
+                console.log('Performance Stats:', data.performance_stats);
+                console.log('Duration Breakdown:', data.duration_breakdown);
+                console.log('Active Days:', data.active_days);
+
+                // Render performance trends graph
+                if (data.trends && data.trends.graph && trendsContainer) {
+                    const graphData = data.trends.graph;
+                    Plotly.newPlot('performanceGraph', graphData.data, graphData.layout);
+                }
+
+                // Render top videos
+                if (data.topVideos && data.topVideos.videos && topVideosContainer) {
+                    renderTopVideos(data.topVideos.videos);
+                }
+
+                // Render performance stats
+                if (data.performance_stats && performanceStatsContainer) {
+                    renderPerformanceStats(data.performance_stats);
+                } else {
+                    console.log('Performance stats data is missing or invalid');
+                    performanceStatsContainer.innerHTML = '<p>No performance stats available</p>';
+                }
+
+                // Render active days chart
+                if (data.active_days && activeDaysChartContainer) {
+                    try {
+                        const activeDaysData = data.active_days;
+                        console.log('activeDaysData', activeDaysData)
+                        Plotly.newPlot('activeDaysChart', activeDaysData.graph.data, activeDaysData.graph.layout);
+                    } catch (error) {
+                        console.error('Error parsing active days data:', error);
+                        activeDaysChartContainer.innerHTML = '<p>Error loading active days chart</p>';
+                    }
+                } else {
+                    console.log('Active days data is missing or invalid');
+                    activeDaysChartContainer.innerHTML = '<p>No active days data available</p>';
+                }
+
+                // Render duration breakdown
+                if (data.duration_breakdown && durationBreakdownContainer) {
+                    try {
+                        const durationData = data.duration_breakdown;
+                        console.log('durationData', durationData)
+                        Plotly.newPlot('durationBreakdown', durationData.graph.data, durationData.graph.layout);
+                    } catch (error) {
+                        console.error('Error parsing duration breakdown data:', error);
+                        durationBreakdownContainer.innerHTML = '<p>Error loading duration breakdown</p>';
+                    }
+                } else {
+                    console.log('Duration breakdown data is missing or invalid');
+                    durationBreakdownContainer.innerHTML = '<p>No duration breakdown available</p>';
+                }
+
+                
+            } else {
+                console.error('Failed to load overview data:', data.message);
+                showError(data.message || 'Failed to load overview data');
+            }
+        } catch (error) {
+            console.error('Error loading overview:', error);
+            showError('An error occurred while loading overview data');
+        } finally {
+            hideLoading(); // Hide loading state regardless of success or failure
+        }
+    }
+
+    // Render top videos function
+    function renderTopVideos(videos) {
+        const videosContainer = document.getElementById('topVideos');
+        if (!videosContainer) {
+            console.error('Videos container not found');
+            return;
+        }
+
+        console.log('Rendering top videos:', videos);
+
+        if (!Array.isArray(videos) || videos.length === 0) {
+            console.log('No videos found or invalid data');
+            videosContainer.innerHTML = '<p>No videos found</p>';
+            return;
+        }
+
+        videosContainer.innerHTML = '';
+
+        videos.forEach((video, index) => {
+            console.log(`Rendering video ${index + 1}:`, video);
+            const videoCard = document.createElement('div');
+            videoCard.className = 'video-card';
+            videoCard.style.cursor = 'pointer';
+            videoCard.innerHTML = `
+                <img src="${video.thumbnail}" alt="${video.title}" class="video-thumbnail">
+                <div class="video-info">
+                    <h4 class="video-title">${video.title || 'Untitled Video'}</h4>
+                    <div class="video-stats">
+                        <div class="stat-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                            </svg>
+                            ${formatNumber(video.like_count || 0)}
+                        </div>
+                        <div class="stat-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                            </svg>
+                            ${formatNumber(video.comment_count || 0)}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            videoCard.addEventListener('click', () => {
+                if (video.original_url) {
+                    window.open(video.original_url, '_blank');
+                }
+            });
+
+            videosContainer.appendChild(videoCard);
+        });
+    }
+
+    // Render performance stats function
+    function renderPerformanceStats(stats) {
+        const performanceStats = stats.performance;
+        const statsContainer = document.getElementById('performanceStats');
+        if (!statsContainer) {
+            console.error('Performance stats container not found');
+            return;
+        }
+
+        if (!performanceStats || Object.keys(performanceStats).length === 0) {
+            statsContainer.innerHTML = '<p>No performance stats available</p>';
+            return;
+        }
+
+        statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">
+                        <i class="fas fa-heart"></i>
+                        ${formatNumber(performanceStats.total_likes)}
+                    </div>
+                    <div class="stat-label">Total Likes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">
+                        <i class="fas fa-comment"></i>
+                        ${formatNumber(performanceStats.total_comments)}
+                    </div>
+                    <div class="stat-label">Total Comments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">
+                        <i class="fas fa-play"></i>
+                        ${formatNumber(performanceStats.total_views)}
+                    </div>
+                    <div class="stat-label">Total Views</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">
+                        <i class="fas fa-share"></i>
+                        ${formatNumber(performanceStats.total_shares)}
+                    </div>
+                    <div class="stat-label">Total Shares</div>
+                </div>
+        `;
+    }
+
+    // Error display function
+    function showError(message) {
+        const existingError = document.querySelector('.error-message');
+        if (existingError) {
+            existingError.remove();
+        }
+    
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4';
+        errorDiv.textContent = message;
+        
+        const container = document.querySelector('.container');
+        if (container) {
+            if (container.firstChild) {
+                container.insertBefore(errorDiv, container.firstChild);
+            } else {
+                container.appendChild(errorDiv);
+            }
+        }
+    
+        // Remove error after 5 seconds
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 5000);
+    }
+
+    // Analyze profile button handler
     const analyzeButton = document.getElementById('analyze-profile');
     if (analyzeButton) {
         analyzeButton.addEventListener('click', function () {
@@ -126,15 +351,24 @@ document.addEventListener('DOMContentLoaded', function () {
             if (username) {
                 window.location.href = `/overview?username=${encodeURIComponent(username)}`;
             } else {
-                // Show error if no username is stored
-                const errorElement = document.createElement('div');
-                errorElement.className = 'alert alert-danger';
-                errorElement.textContent = 'Please search for a profile first.';
-                searchResults.appendChild(errorElement);
+                showError('Please search for a profile first.');
             }
         });
         
         // Initially disable the analyze button
         analyzeButton.disabled = true;
     }
+
+    // Helper function to format numbers
+    function formatNumber(num) {
+        if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'M';
+        }
+        if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K';
+        }
+        return num.toString();
+    }
+    
 });
+
