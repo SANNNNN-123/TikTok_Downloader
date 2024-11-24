@@ -95,34 +95,11 @@ document.addEventListener('DOMContentLoaded', function () {
         profileInfo.style.display = 'block';
     }
 
-    document.getElementById('select-profile').addEventListener('click', function () {
+    document.getElementById('analyze-profile').addEventListener('click', function () {
         // Redirect to overview.html
-        window.location.href = 'overview.html';
+        window.location.href = '/overview';
     });
     
 });
 
-document.addEventListener("DOMContentLoaded", function () {
-    const downloadButtons = document.querySelectorAll(".download-btn");
-    const username = document.getElementById("profile-name").textContent.trim().toLowerCase();
-
-    if (username) {
-        console.log(`Username loaded: ${username}`);
-        downloadButtons.forEach(button => {
-            button.addEventListener("click", function () {
-                const format = this.getAttribute("data-format");
-                const downloadUrl = `/download/${format}?username=${username}`;
-                console.log(`Downloading in format: ${format}`);
-                window.location.href = downloadUrl;
-            });
-        });
-    } else {
-        console.error("No username found. Cannot download.");
-    }
-});
-
-function downloadData(format) {
-    const username = document.getElementById('username').value.trim();
-    window.location.href = `/download/${format}?username=${encodeURIComponent(username)}`;
-}
 

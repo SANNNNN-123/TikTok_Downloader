@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 from flask_caching import Cache
 from src.metadata import TikTokMetaData
 from src.scraper import get_user_info
+from src.analytics import get_top_videos
 import pandas as pd
 import io
 import json
@@ -35,7 +36,6 @@ def download_page():
 
 
 @app.route('/api/search', methods=['POST'])
-#@app.route('/scrape', methods=['POST'])
 async def scrape():
     username = request.form['name'].lower()  # Normalize username
     logging.debug(f"Scraping data for username: {username}")
@@ -47,10 +47,14 @@ async def scrape():
     user_info, videos = await asyncio.gather(user_info_task, videos_task)
 
     if user_info and videos:
+        # Sort videos by like count and get top 3
+        top_videos = sorted(videos, key=lambda x: x['like_count'], reverse=True)[:3]
+        
         # Both user info and videos exist
         data = {
             'user_info': user_info,
-            'videos': videos
+            'videos': videos,
+            'top_videos': top_videos
         }
         # Store in cache
         cache.set(username, data, timeout=3600)  # Cache for 1 hour
@@ -59,14 +63,8 @@ async def scrape():
             'success': True,
             'message': f'Found {len(videos)} videos from @{username}',
             'videoCount': len(videos),
-            'userInfo': user_info
-        })
-    elif user_info and not videos:
-        # User exists but no videos (private profile)
-        logging.info(f"Profile is private for {username}")
-        return jsonify({
-            'success': False,
-            'message': 'This user has a private profile, and no data is available.'
+            'userInfo': user_info,
+            'topVideos': top_videos
         })
     else:
         # Neither user info nor videos exist (user doesn't exist)
@@ -75,6 +73,16 @@ async def scrape():
             'success': False,
             'message': 'The user does not exist.'
         })
+    
+@app.route('/api/videos')
+def get_videos():
+    username = request.args.get('username', '').lower()
+    data = cache.get(username)
+    
+    if not data or 'videos' not in data:
+        return jsonify({'success': False, 'message': 'No video data found'})
+    
+    return jsonify({'success': True, 'videos': data['videos']})
 
 @app.route('/download/<format>')
 def download(format):
