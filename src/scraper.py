@@ -2,6 +2,7 @@ from playwright.async_api import async_playwright
 import time
 from typing import Dict, Optional
 import os
+import logging
 
 async def get_user_info(username: str) -> Optional[Dict]:
     try:
@@ -33,6 +34,7 @@ async def get_user_info(username: str) -> Optional[Dict]:
             if "BROWSER_PLAYWRIGHT_ENDPOINT" in os.environ:
                 browser = await p.chromium.connect(os.environ["BROWSER_PLAYWRIGHT_ENDPOINT"])
                 print("Using Railway Browser Endpoint")
+                logging.debug(f"Using Railway Browser Endpoint")
             else:
                 browser = await p.chromium.launch(**browser_options)
                 
@@ -100,8 +102,10 @@ async def get_user_info(username: str) -> Optional[Dict]:
                 return None
 
             #print("Closing browser...")
-            await context.close()
-            await browser.close()
+            #await context.close()
+            #await browser.close()
+            # Clean up resources
+            await page.close()  # Explicitly close the page to free up memory
 
             end_time = time.time()
             print(f"Time completed in {end_time - start_time:.2f} seconds")
