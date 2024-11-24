@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const following = document.getElementById('following');
     const followers = document.getElementById('followers');
     const likes = document.getElementById('likes');
+    const dataSource = document.getElementById('data-source');
 
     // Search button click event listener
     if (searchButton && searchInput && searchResults) {
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Display a loading state
                 searchButton.disabled = true;
                 searchResults.textContent = 'Searching...';
+                profileInfo.style.display = 'none';
 
                 try {
                     const formData = new FormData();
@@ -44,22 +46,43 @@ document.addEventListener('DOMContentLoaded', function () {
                     const data = await response.json();
                     searchResults.textContent = ''; // Clear search results
 
-                    if (data.success) {
+                    if (data.status === 'success') {
                         // Display a success message
                         const successMessage = document.createElement('div');
                         successMessage.className = 'alert alert-success';
-                        successMessage.textContent = data.message;
+                        
+                        // Customize message based on data source
+                        const sourceText = data.source === 'cache' ? 
+                            'Retrieved from database' : 
+                            'Fetched new data';
+                        
+                        successMessage.textContent = `${sourceText}: Found profile data for @${username}`;
                         searchResults.appendChild(successMessage);
 
-                        // Update the profile information if userInfo exists
-                        if (data.userInfo) {
-                            updateProfileDisplay(data.userInfo);
+                        // Update the profile information
+                        if (data.profile) {
+                            updateProfileDisplay(data.profile);
+                            
+                            // Display data source indicator
+                            if (dataSource) {
+                                dataSource.textContent = `Data source: ${data.source === 'cache' ? 'Database Cache' : 'Fresh Data'}`;
+                                dataSource.className = `badge ${data.source === 'cache' ? 'bg-info' : 'bg-success'}`;
+                            }
+                        }
+
+                        // Store the username in localStorage for the overview page
+                        localStorage.setItem('currentUsername', username);
+                        
+                        // Enable the analyze button
+                        const analyzeButton = document.getElementById('analyze-profile');
+                        if (analyzeButton) {
+                            analyzeButton.disabled = false;
                         }
                     } else {
                         // Display an error message
                         const errorMessage = document.createElement('div');
                         errorMessage.className = 'alert alert-danger';
-                        errorMessage.textContent = data.message;
+                        errorMessage.textContent = data.message || 'An error occurred while searching.';
                         searchResults.appendChild(errorMessage);
                     }
                 } catch (error) {
@@ -78,28 +101,40 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Update the profile information display
     function updateProfileDisplay(userInfo) {
-        profilePic.src = userInfo.profile_pic;
-        profileName.textContent = userInfo.name;
-        following.textContent = `Following: ${userInfo.following}`;
-        followers.textContent = `Followers: ${userInfo.followers}`;
-        likes.textContent = `Likes: ${userInfo.likes}`;
+        if (profilePic) profilePic.src = userInfo.profile_pic || '/static/default-profile.png';
+        if (profileName) profileName.textContent = userInfo.name || userInfo.username;
+        if (following) following.textContent = `Following: ${userInfo.following?.toLocaleString() || '0'}`;
+        if (followers) followers.textContent = `Followers: ${userInfo.followers?.toLocaleString() || '0'}`;
+        if (likes) likes.textContent = `Likes: ${userInfo.likes?.toLocaleString() || '0'}`;
 
         // Toggle the visibility of the verified icon
-        if (userInfo.is_verified) {
-            verifiedIcon.style.display = 'inline-flex';
-        } else {
-            verifiedIcon.style.display = 'none';
+        if (verifiedIcon) {
+            verifiedIcon.style.display = userInfo.is_verified ? 'inline-flex' : 'none';
         }
 
         // Ensure the profile info section is visible
-        profileInfo.style.display = 'block';
+        if (profileInfo) {
+            profileInfo.style.display = 'block';
+        }
     }
 
-    document.getElementById('analyze-profile').addEventListener('click', function () {
-        // Redirect to overview.html
-        window.location.href = '/overview';
-    });
-    
+    // Analyze profile button click handler
+    const analyzeButton = document.getElementById('analyze-profile');
+    if (analyzeButton) {
+        analyzeButton.addEventListener('click', function () {
+            const username = localStorage.getItem('currentUsername');
+            if (username) {
+                window.location.href = `/overview?username=${encodeURIComponent(username)}`;
+            } else {
+                // Show error if no username is stored
+                const errorElement = document.createElement('div');
+                errorElement.className = 'alert alert-danger';
+                errorElement.textContent = 'Please search for a profile first.';
+                searchResults.appendChild(errorElement);
+            }
+        });
+        
+        // Initially disable the analyze button
+        analyzeButton.disabled = true;
+    }
 });
-
-

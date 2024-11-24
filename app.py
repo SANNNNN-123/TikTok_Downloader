@@ -1,19 +1,15 @@
 from flask import Flask, render_template, request, jsonify, send_file
-from flask_caching import Cache
 from src.metadata import TikTokMetaData
 from src.scraper import get_user_info
 from src.analytics import get_top_videos
+from src.database import get_db,init_db, Video,get_cached_user_data,store_user_data
 import pandas as pd
-import io
-import json
 import logging
 import asyncio
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
-
-# Configure Flask-Caching
-cache = Cache(app, config={'CACHE_TYPE': 'filesystem', 'CACHE_DIR': '/tmp/flask_cache'})
 
 scraper = TikTokMetaData()
 
@@ -37,94 +33,54 @@ def download_page():
 
 @app.route('/api/search', methods=['POST'])
 async def scrape():
-    username = request.form['name'].lower()  # Normalize username
-    logging.debug(f"Scraping data for username: {username}")
+    username = request.form['name'].lower().lstrip('@')  # Normalize username
+    logging.debug(f"Finding data for username: {username}")
 
-    # Run both scraping functions concurrently
-    user_info_task = asyncio.create_task(get_user_info(username))
-    videos_task = asyncio.create_task(scraper.get_user_videos(username))
+    try:
+        # Check cache first
+        cached_profile, cached_videos = await get_cached_user_data(username)
 
-    user_info, videos = await asyncio.gather(user_info_task, videos_task)
-
-    if user_info and videos:
-        # Sort videos by like count and get top 3
-        top_videos = sorted(videos, key=lambda x: x['like_count'], reverse=True)[:3]
+        if cached_profile and cached_videos:
+            return jsonify({
+                'status': 'success',
+                'message': f'Found {len(cached_videos)} videos from @{username}',
+                'profile': cached_profile,
+                'source': 'cache'
+            })
         
-        # Both user info and videos exist
-        data = {
-            'user_info': user_info,
-            'videos': videos,
-            'top_videos': top_videos
-        }
-        # Store in cache
-        cache.set(username, data, timeout=3600)  # Cache for 1 hour
-        logging.debug(f"Stored user info and {len(videos)} videos in cache for {username}")
-        return jsonify({
-            'success': True,
-            'message': f'Found {len(videos)} videos from @{username}',
-            'videoCount': len(videos),
-            'userInfo': user_info,
-            'topVideos': top_videos
-        })
-    else:
-        # Neither user info nor videos exist (user doesn't exist)
-        logging.error(f"User {username} does not exist")
-        return jsonify({
-            'success': False,
-            'message': 'The user does not exist.'
-        })
-    
-@app.route('/api/videos')
-def get_videos():
-    username = request.args.get('username', '').lower()
-    data = cache.get(username)
-    
-    if not data or 'videos' not in data:
-        return jsonify({'success': False, 'message': 'No video data found'})
-    
-    return jsonify({'success': True, 'videos': data['videos']})
+        # If not in cache, fetch new data
+        # Run both scraping functions concurrently
+        logging.debug(f"Fetching new data for {username}")
+        user_info_task = asyncio.create_task(get_user_info(username))
+        videos_task = asyncio.create_task(scraper.get_user_videos(username))
+        
+        profile_data, videos_data = await asyncio.gather(user_info_task, videos_task)
 
-@app.route('/download/<format>')
-def download(format):
-    username = request.args.get('username', '').lower()  # Normalize username
-    logging.debug(f"Attempting to download data for username: {username}")
-    data = cache.get(username)
-    
-    if not data:
-        logging.error(f"No data found in cache for username: {username}")
-        return jsonify({'success': False, 'message': 'No data found for this username'})
-    
-    logging.debug(f"Found data in cache for {username}, preparing {format} file")
-    
-    if format == 'json':
-        return send_file(
-            io.BytesIO(json.dumps(data, indent=2).encode()),
-            mimetype='application/json',
-            as_attachment=True,
-            download_name=f'{username}_data.json'
-        )
-    elif format in ['csv', 'excel']:
-        df = pd.DataFrame(data['videos'])
-        output = io.BytesIO()
-        if format == 'csv':
-            df.to_csv(output, index=False)
-            mimetype = 'text/csv'
-            download_name = f'{username}_videos.csv'
+        if profile_data and videos_data:
+            # Store data in database
+            await store_user_data(username, profile_data, videos_data)
+        
+            logging.debug(f"Stored user info and {len(videos_data)} videos in database for {username}")
+            return jsonify({
+                'status': 'success',
+                'message': f'Successfully fetched data for @{username}',
+                'profile': profile_data,
+                'source': 'fresh'
+            })
+
         else:
-            df.to_excel(output, index=False, engine='openpyxl')
-            mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            download_name = f'{username}_videos.xlsx'
-        output.seek(0)
-        return send_file(
-            output,
-            mimetype=mimetype,
-            as_attachment=True,
-            download_name=download_name
-        )
-    
-    logging.error(f"Invalid format requested: {format}")
-    return jsonify({'success': False, 'message': 'Invalid format'})
+            # Neither user info nor videos exist (user doesn't exist)
+            logging.error(f"User {username} does not exist")
+            return jsonify({
+                'success': False,
+                'message': 'The user does not exist.'
+            })
+    except Exception as e:
+        print(f"Error analyzing profile: {e}") 
+        return jsonify({'status': 'error', 'message': f'Error analyzing profile: {str(e)}'}), 500
+
 
 if __name__ == '__main__':
+    init_db()
     app.run(debug=True)
 
