@@ -118,6 +118,6 @@ def get_overview_data(username):
 
 
 if __name__ == '__main__':
-    #init_db()
+    init_db()
     app.run(debug=True)
 

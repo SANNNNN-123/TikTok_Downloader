@@ -133,7 +133,7 @@ def get_trends_data(username):
         # Find the maximum count for y-axis
         max_y_value = max(max(views, default=0), max(likes, default=0))
 
-         # Create the Plotly figure
+        # Create the Plotly figure
         fig = go.Figure()
         
         # Add traces for views and likes
@@ -177,7 +177,7 @@ def get_trends_data(username):
                 range=[months.index(initial_x_range[0]), months.index(initial_x_range[-1])]
             ),
             yaxis=dict(
-                title='Count',
+                showticklabels=False,
                 showgrid=True,
                 gridcolor='rgba(0,0,0,0.1)',
                 showline=True,

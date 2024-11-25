@@ -1,4 +1,21 @@
 document.addEventListener('DOMContentLoaded', function () {
+    
+    // Sidebar menu open and close
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const content = document.querySelector('.content');
+
+    sidebarToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('collapsed');
+        
+        if (sidebar.classList.contains('collapsed')) {
+            content.style.marginLeft = `${getComputedStyle(document.documentElement).getPropertyValue('--sidebar-collapsed-width')}`;
+        } else {
+            content.style.marginLeft = `${getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width')}`;
+        }
+    });
+    
+    
     // Highlight the current page in the navigation
     const currentPage = window.location.pathname.split('/').pop();
     const navItems = document.querySelectorAll('.nav-item');
@@ -21,64 +38,93 @@ document.addEventListener('DOMContentLoaded', function () {
     const likes = document.getElementById('likes');
     const dataSource = document.getElementById('data-source');
     const loadingState = document.getElementById('loading-state');
+
     
+
 
     // Search functionality
     if (searchButton && searchInput && searchResults) {
         searchButton.addEventListener('click', async function (e) {
             e.preventDefault();
             const username = searchInput.value.trim();
-
+    
             if (username) {
-                // Display a loading state
+                // Reset and show loading elements
                 searchButton.disabled = true;
-                searchResults.textContent = 'Searching...';
+                const loadingContainer = document.getElementById('loading-container');
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                
+                loadingContainer.style.display = 'block';
+                searchResults.textContent = '';
                 if (profileInfo) profileInfo.style.display = 'none';
-
+    
+                // Simulate progress while waiting for API response
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    if (progress < 90) {  // Only go up to 90% until we get actual response
+                        progress += Math.random() * 15;  // Random increment for more natural feel
+                        progress = Math.min(progress, 90);  // Don't exceed 90%
+                        progressBar.style.width = `${progress}%`;
+                        progressText.textContent = `${Math.round(progress)}%`;
+                    }
+                }, 200);
+    
                 try {
                     const formData = new FormData();
                     formData.append('name', username);
-
-                    // Send a POST request to the API
+    
                     const response = await fetch('/api/search', {
                         method: 'POST',
                         body: formData
                     });
-
+    
                     const data = await response.json();
-                    searchResults.textContent = ''; // Clear search results
-
-                    if (data.status === 'success') {
-                        // Display success message
-                        const successMessage = document.createElement('div');
-                        successMessage.className = 'alert alert-success';
-                        const sourceText = data.source === 'cache' ? 
-                            'Retrieved from cache' : 
-                            'Fetched new data';
-                        successMessage.textContent = `${sourceText}: Found profile data for @${username}`;
-                        searchResults.appendChild(successMessage);
-
-                        // Update profile information
-                        if (data.profile) {
-                            updateProfileDisplay(data.profile);
-                            
-                            if (dataSource) {
-                                dataSource.textContent = `Data source: ${data.source === 'cache' ? 'Database Cache' : 'Fresh Data'}`;
-                                dataSource.className = `badge ${data.source === 'cache' ? 'bg-info' : 'bg-success'}`;
+                    
+                    // Complete the progress bar
+                    clearInterval(progressInterval);
+                    progressBar.style.width = '100%';
+                    progressText.textContent = '100%';
+                    
+                    // Hide loading container after a short delay
+                    setTimeout(() => {
+                        loadingContainer.style.display = 'none';
+                        
+                        if (data.status === 'success') {
+                            // Display success message
+                            const successMessage = document.createElement('div');
+                            successMessage.className = 'alert alert-success';
+                            const sourceText = data.source === 'cache' ? 
+                                'Retrieved from cache' : 
+                                'Fetched new data';
+                            successMessage.textContent = `${sourceText}: Found profile data for @${username}`;
+                            searchResults.appendChild(successMessage);
+    
+                            // Update profile information
+                            if (data.profile) {
+                                updateProfileDisplay(data.profile);
+                                
+                                if (dataSource) {
+                                    dataSource.textContent = `Data source: ${data.source === 'cache' ? 'Database Cache' : 'Fresh Data'}`;
+                                    dataSource.className = `badge ${data.source === 'cache' ? 'bg-info' : 'bg-success'}`;
+                                }
                             }
+    
+                            // Store username and enable analyze button
+                            localStorage.setItem('currentUsername', username);
+                            const analyzeButton = document.getElementById('analyze-profile');
+                            if (analyzeButton) {
+                                analyzeButton.disabled = false;
+                            }
+                        } else {
+                            showError(data.message || 'An error occurred while searching.');
                         }
-
-                        // Store username and enable analyze button
-                        localStorage.setItem('currentUsername', username);
-                        const analyzeButton = document.getElementById('analyze-profile');
-                        if (analyzeButton) {
-                            analyzeButton.disabled = false;
-                        }
-                    } else {
-                        showError(data.message || 'An error occurred while searching.');
-                    }
+                    }, 500);
+    
                 } catch (error) {
+                    clearInterval(progressInterval);
                     console.error('Error:', error);
+                    loadingContainer.style.display = 'none';
                     showError('An error occurred while searching. Please try again.');
                 } finally {
                     searchButton.disabled = false;

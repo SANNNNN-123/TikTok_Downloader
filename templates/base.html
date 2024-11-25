@@ -3,27 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Analytics</title>
+    <title> TikTok Analytics</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    
 </head>
 <body>
     <div class="layout">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
+            <button id="sidebarToggle" class="sidebar-toggle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
             <h1 class="sidebar-title">TikTok Analytics</h1>
             <nav class="sidebar-nav">
                 <a href="/search" class="nav-item" data-page="search">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                    Search
+                    <span class="nav-text">Search</span>
                 </a>
                 <a href="/overview" class="nav-item" data-page="overview">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-                    Overview
+                    <span class="nav-text">Overview</span>
                 </a>
                 <a href="/analytics" class="nav-item" data-page="analytics">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                    Analytics
+                    <span class="nav-text">Analytics</span>
                 </a>
                 <a href="/download" class="nav-item" data-page="download">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -31,11 +37,11 @@
                         <polyline points="7 10 12 15 17 10"/>
                         <line x1="12" x2="12" y1="15" y2="3"/>
                     </svg>
-                    Download
+                    <span class="nav-text">Download</span>
                 </a>
             </nav>
             <div class="sidebar-footer">
-                Made by Zuhair Aziz v2.03
+                Made by Zuhair Aziz v2.04
             </div>
         </aside>
         <main class="content">
