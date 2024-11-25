@@ -1,10 +1,37 @@
 import plotly
 import plotly.graph_objs as go
 from flask import jsonify
-from src.database import get_db, Video
+from src.database import get_db, Video,User
 from datetime import datetime,timedelta
 import json
 
+
+def get_user_info_fromdb(username):
+    try:
+        db = next(get_db())
+
+        user = db.query(User).filter(User.username == username).first()
+          
+        if not user:
+            return jsonify({
+                'status': 'error',
+                'message': 'User not found'
+            }), 404
+            
+        user_info = {
+            'username': user.username,
+            'profile_data': user.profile_data
+        }
+
+        return jsonify({
+            'status': 'success',
+            'user_info': user_info
+        })
+        
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    finally:
+        db.close()
 
 def get_top_videos(username):
     try:
@@ -658,5 +685,109 @@ def get_duration_analysis(username):
             'status': 'error',
             'message': str(e)
         }), 500
+    finally:
+        db.close()
+
+
+def get_Engagement_data(username):
+    try:
+        db = next(get_db())
+        
+        # Get all videos for the user without initial ordering
+        videos = db.query(Video)\
+            .filter(Video.username == username)\
+            .all()
+        
+        if not videos:
+            return jsonify({
+                'status': 'success',
+                'performance': {
+                    'total_likes': 0,
+                    'total_comments': 0,
+                    'total_views': 0,
+                    'total_shares': 0,
+                    'avg_likes_per_post': 0,
+                    'avg_comments_per_post': 0,
+                    'avg_views_per_post': 0,
+                    'engagement_rate': 0
+                }
+            })
+        
+        # Process videos and parse timestamps
+        parsed_videos = []
+        for video in videos:
+            try:
+                timestamp_str = video.video_metadata.get('timestamp')
+                if timestamp_str:
+                    # Try different date formats
+                    for fmt in ['%d/%m/%y %H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S']:
+                        try:
+                            timestamp = datetime.strptime(timestamp_str, fmt)
+                            video.parsed_timestamp = timestamp  # Add parsed timestamp to video object
+                            parsed_videos.append(video)
+                            break
+                        except ValueError:
+                            continue
+            except Exception as e:
+                print(f"Error parsing timestamp for video: {e}")
+                continue
+        
+        # Sort videos by timestamp in descending order
+        parsed_videos.sort(key=lambda x: x.parsed_timestamp, reverse=True)
+        
+        # Calculate totals from all parsed videos
+        total_likes = sum(int(v.video_metadata.get('like_count', 0)) for v in parsed_videos)
+        total_comments = sum(int(v.video_metadata.get('comment_count', 0)) for v in parsed_videos)
+        total_views = sum(int(v.video_metadata.get('view_count', 0)) for v in parsed_videos)
+        total_shares = sum(int(v.video_metadata.get('repost_count', 0)) for v in parsed_videos)
+        
+        # Get last 10 videos for average calculations
+        recent_videos = parsed_videos[:10]
+        recent_video_count = len(recent_videos)
+        
+        # Calculate averages based on recent 10 videos
+        recent_likes = sum(int(v.video_metadata.get('like_count', 0)) for v in recent_videos)
+        recent_comments = sum(int(v.video_metadata.get('comment_count', 0)) for v in recent_videos)
+        recent_views = sum(int(v.video_metadata.get('view_count', 0)) for v in recent_videos)
+        
+        # Calculate averages for recent videos
+        avg_likes_per_post = recent_likes / recent_video_count if recent_video_count > 0 else 0
+        avg_comments_per_post = recent_comments / recent_video_count if recent_video_count > 0 else 0
+        avg_views_per_post = recent_views / recent_video_count if recent_video_count > 0 else 0
+        
+
+        # profile_response = get_user_info_fromdb(username)
+        # profile_data = profile_response.json
+
+        # Calculate engagement rate based on all videos
+        engagement_rate = 0
+        if total_views > 0:
+            engagement_rate = ((total_likes + total_comments + total_shares) / total_views) * 100
+
+        if engagement_rate >= 6:
+            profile_rating = "High"
+        elif engagement_rate >= 3 and engagement_rate < 6:
+            profile_rating = "Medium"
+        else:
+            profile_rating = "Low"
+        
+        return jsonify({
+            'status': 'success',
+            'performance': {
+                'total_likes': total_likes,
+                'total_comments': total_comments,
+                'total_views': total_views,
+                'total_shares': total_shares,
+                'avg_likes_per_post': round(avg_likes_per_post, 2),
+                'avg_comments_per_post': round(avg_comments_per_post, 2),
+                'avg_views_per_post': round(avg_views_per_post, 2),
+                'engagement_rate': round(engagement_rate, 2),
+                'recent_posts_analyzed': recent_video_count,
+                'total_posts_analyzed': len(parsed_videos),
+                'profile_rating' : profile_rating
+            }
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
     finally:
         db.close()

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from src.metadata import TikTokMetaData
 from src.scraper import get_user_info
-from src.analytics import get_top_videos,get_trends_data,get_performance_data,get_active_days_data,get_duration_analysis
+from src.analytics import get_top_videos,get_trends_data,get_performance_data,get_active_days_data,get_duration_analysis,get_Engagement_data,get_user_info_fromdb
 from src.database import init_db, Video,get_cached_user_data,store_user_data
 import pandas as pd
 import logging
@@ -67,7 +67,12 @@ async def scrape():
                 'profile': profile_data,
                 'source': 'fresh'
             })
-
+        elif profile_data or videos_data:
+            logging.error(f"User {username} exist, but profile is private")
+            return jsonify({
+                'success': False,
+                'message': 'The user profile is private.'
+            })
         else:
             # Neither user info nor videos exist (user doesn't exist)
             logging.error(f"User {username} does not exist")
@@ -82,6 +87,10 @@ async def scrape():
 @app.route('/api/overview/<username>')
 def get_overview_data(username):
     try:
+        # Get profile data
+        profile_response = get_user_info_fromdb(username)
+        profile_data = profile_response.json
+ 
         # Get trends data
         trends_response = get_trends_data(username)
         trends_data = trends_response.json
@@ -101,14 +110,20 @@ def get_overview_data(username):
         # Get duration analysis
         duration_response = get_duration_analysis(username)
         duration_data = duration_response.json
- 
+
+        # Get engagement data
+        engagement_response = get_Engagement_data(username)
+        engagement_data = engagement_response.json
+
         response_data = {
             'status': 'success',
+            'user_info': profile_data['user_info']['profile_data'],
             'trends': trends_data,
             'topVideos': videos_data,
             'performance_stats' : performance_data,
             'active_days' : activedays_data,
-            'duration_breakdown' : duration_data
+            'duration_breakdown' : duration_data,
+            'engagement_section' : engagement_data,
 
         }
         return jsonify(response_data)

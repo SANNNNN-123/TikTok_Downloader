@@ -2,11 +2,14 @@
 
 {% block content %}
 <div class="dashboard-grid">
+    <div class="header">
+        <h1>Overview</h1>
+        <p>Here's overview of engagement rate for this profile</p>
+    </div>
     <div class="main-content">
-        <section class="top-videos-section">
-            <h3>Top 3 Most Liked Videos</h3>
-            <div class="videos-grid" id="topVideos">
-                <!-- Videos will be loaded here -->
+        <section class="engagement-section">
+            <div class="engagement-stat" id="engagementStats">
+                <!-- Stats will be loaded here -->
             </div>
         </section>
 
@@ -18,9 +21,10 @@
             </div>
         </section>
 
-        <section class="duration-section">
-            <h3>Duration Breakdown</h3>
-            <div class="duration-container" id="durationBreakdown">
+        <section class="active-days-section">
+            <h3>Your Most Active Days</h3>
+            <p class="active-days-container">*days of the week with highest video views</p>
+            <div class="days-stat" id="activeDaysChart">
                 <!-- Plotly graph will be rendered here -->
             </div>
         </section>
@@ -28,20 +32,18 @@
     </div>
 
     <div class="performance-container">
-        <section class="performance-section">
-            <h3>Performance Summary</h3>
-            <p class="time-period">Q4 (Oct - Present)</p>
-            <div class="performance-stats" id="performanceStats">
-                <!-- Stats will be loaded here -->
+ 
+        <section class="duration-section">
+            <h3>Duration Breakdown</h3>
+            <div class="duration-container" id="durationBreakdown">
+                <!-- Plotly graph will be rendered here -->
             </div>
         </section>
 
-
-        <section class="active-days-section">
-            <h3>Your Most Active Days</h3>
-            <p class="active-days-container">*days of the week with highest video views</p>
-            <div class="days-stat" id="activeDaysChart">
-                <!-- Plotly graph will be rendered here -->
+        <section class="top-videos-section">
+            <h3>Top 3 Most Liked Videos</h3>
+            <div class="videos-grid" id="topVideos">
+                <!-- Videos will be loaded here -->
             </div>
         </section>
 

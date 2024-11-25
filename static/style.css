@@ -12,7 +12,6 @@
 
 body {
     font-family: Arial, sans-serif;
-    /*background-color: #f0f2f5; */
     margin: 0;
     padding: 0;
 }
@@ -139,7 +138,7 @@ body {
 
 .content {
     flex-grow: 1;
-    padding: 20px;
+    padding: 10px;
     margin-left: var(--sidebar-width);
     transition: margin-left var(--transition-speed) ease;
 }
@@ -367,43 +366,53 @@ body {
 
 /* Dashboard Grid */
 .dashboard-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 20px;
-    max-width: 100%; /* Ensure grid doesn't overflow */
+    padding: 20px;
+}
+
+.header {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.header p {
+    color: #666;
 }
 
 .main-content {
     display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
-    min-width: 0;
 }
 
 .performance-container {
     display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
-    min-width: 0;
 }
 
-/* Section Styles */
-.top-videos-section,
-.performance-section,
+
+.duration-section,
+.top-videos-section {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.graph-section,
 .active-days-section {
     background-color: white;
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-.graph-section,
-.duration-section {
-    background-color: white;
-    border-radius: 8px;
-    padding: 30px 20px; /* Increased vertical padding */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    overflow: visible; /* Allow graph to be fully visible */
 }
 
 /* Section Headers */
@@ -541,10 +550,14 @@ body {
 }
 
 .stat-card {
-    background: #eef4f4; /* #f8f9fa*/
-    padding: 1rem;
+    background: #ffffff;
+    padding: 1.5rem; /* Increased padding */
     border-radius: 8px;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 24px; /* Increased gap between icon and content */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
 .stat-card:hover {
@@ -555,7 +568,6 @@ body {
     font-size: 1.5rem;
     font-weight: 600;
     color: #333;
-    margin-bottom: 0.25rem;
 }
 
 .stat-value i {
@@ -608,24 +620,204 @@ body {
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-    .dashboard-grid {
+    .main-content,
+    .performance-container {
         grid-template-columns: 1fr;
-    }
-    .performance-stats {
-        grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 768px) {
-    .performance-stats {
+    .engagement-stat {
         grid-template-columns: 1fr;
     }
-    .sidebar {
-        width: 200px;
-        min-width: 200px;
+}
+
+/* Engagement Section Styles */
+.engagement-section {
+    grid-column: 1 / -1;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(246, 243, 243, 0.1);
+}
+
+.engagement-stat {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+@media (max-width: 1024px) {
+    .engagement-stat {
+        grid-template-columns: repeat(2, 1fr);
     }
-    
-    .content {
-        margin-left: 200px;
+}
+@media (max-width: 640px) {
+    .engagement-stat {
+        grid-template-columns: repeat(1, 1fr);
     }
+}
+
+.card {
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+}
+
+.icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.icon-wrapper svg {
+    width: 20px; 
+    height: 20px;
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.2;
+}
+
+.orange {
+    background-color: #fff0e6;
+    color: #ff8c00;
+}
+
+.blue {
+    background-color: #e6f3ff;
+    color: #0080ff;
+}
+
+.pink {
+    background-color: #ffe6f0;
+    color: #ff1493;
+}
+
+.purple {
+    background-color: #f0e6ff;
+    color: #8a2be2;
+}
+
+.content p {
+    margin: 0 0 0.25rem;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.content h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.value-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.badge {
+    background-color: #e6ffe6;
+    color: #008000;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+}
+
+.rating-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 20px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 10px;
+}
+
+.info-icon { 
+    touch-action: none; 
+    margin-left: 6px; 
+    color: #b8b7b7; 
+    font-size: 7px; 
+    line-height: 1; 
+    width: 6px; /* Reduced from 8px */
+    height: 6px; /* Reduced from 8px */
+    border-radius: 50%; /* Added to ensure circular shape */
+    position: relative; 
+    display: inline-block; 
+} 
+
+.tooltip { 
+    visibility: hidden; 
+    width: 200px; 
+    background-color: #555; 
+    color: #fff; 
+    text-align: center; 
+    border-radius: 4px; 
+    padding: 5px; 
+    position: absolute; 
+    z-index: 1; 
+    bottom: 125%; 
+    left: 50%; 
+    margin-left: -100px; 
+    opacity: 0; 
+    transition: opacity 0.3s; 
+    font-size: 12px; 
+    line-height: 1.4; 
+} 
+
+.tooltip::after { 
+    content: ""; 
+    position: absolute; 
+    top: 100%; 
+    left: 50%; 
+    margin-left: -5px; 
+    border-width: 5px; 
+    border-style: solid; 
+    border-color: #555 transparent transparent transparent; 
+} 
+
+.info-icon:hover { 
+    color: #888; 
+} 
+
+.info-icon:hover .tooltip { 
+    visibility: visible; 
+    opacity: 1; 
+}
+
+.rating-high {
+    background-color: #d5ffd5;
+    color: #006400;
+}
+
+.rating-medium {
+    background-color: #FFD700;
+    color: #8B6914;
+}
+
+.rating-low {
+    background-color: #fc9e9e;
+    color: #8B0000;
 }

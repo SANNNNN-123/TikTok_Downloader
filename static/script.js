@@ -39,8 +39,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const dataSource = document.getElementById('data-source');
     const loadingState = document.getElementById('loading-state');
 
-    
-
+    // Initialize Lucide icons
+    lucide.createIcons();
 
     // Search functionality
     if (searchButton && searchInput && searchResults) {
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 let progress = 0;
                 const progressInterval = setInterval(() => {
                     if (progress < 90) {  // Only go up to 90% until we get actual response
-                        progress += Math.random() * 15;  // Random increment for more natural feel
+                        progress += Math.random() * 3;  // Random increment for more natural feel
                         progress = Math.min(progress, 90);  // Don't exceed 90%
                         progressBar.style.width = `${progress}%`;
                         progressText.textContent = `${Math.round(progress)}%`;
@@ -117,7 +117,12 @@ document.addEventListener('DOMContentLoaded', function () {
                                 analyzeButton.disabled = false;
                             }
                         } else {
-                            showError(data.message || 'An error occurred while searching.');
+                            // Display an error message
+                            //console.log('Failed to retreived data', data.message);
+                            const errorMessage = document.createElement('div');
+                            errorMessage.className = 'alert alert-danger';
+                            errorMessage.textContent = data.message;
+                            searchResults.appendChild(errorMessage);
                         }
                     }, 500);
     
@@ -182,9 +187,10 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadOverviewData(username) {
         const trendsContainer = document.getElementById('performanceGraph');
         const topVideosContainer = document.getElementById('topVideos');
-        const performanceStatsContainer = document.getElementById('performanceStats');
+        //const performanceStatsContainer = document.getElementById('performanceStats');
         const durationBreakdownContainer = document.getElementById('durationBreakdown');
         const activeDaysChartContainer = document.getElementById('activeDaysChart');
+        const engagementStatContainer = document.getElementById('engagementStats')
 
         showLoading(); 
 
@@ -195,11 +201,20 @@ document.addEventListener('DOMContentLoaded', function () {
             console.log('Received overview data:', data);
 
             if (data.status === 'success') {
+                console.log('Profile data:', data.user_info);
                 console.log('Performance Trends:', data.trends);
                 console.log('Top Videos:', data.topVideos);
-                console.log('Performance Stats:', data.performance_stats);
                 console.log('Duration Breakdown:', data.duration_breakdown);
                 console.log('Active Days:', data.active_days);
+                console.log('Engagement data:', data.engagement_section);
+
+                // Render performance stats
+                if (data.engagement_section && engagementStatContainer) {
+                    renderEngagementStats(data.engagement_section,data.user_info );
+                } else {
+                    console.log('Engagement stats data is missing or invalid');
+                    engagementStatContainer.innerHTML = '<p>No engagement stats available</p>';
+                }
 
                 // Render performance trends graph
                 if (data.trends && data.trends.graph && trendsContainer) {
@@ -210,14 +225,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Render top videos
                 if (data.topVideos && data.topVideos.videos && topVideosContainer) {
                     renderTopVideos(data.topVideos.videos);
-                }
-
-                // Render performance stats
-                if (data.performance_stats && performanceStatsContainer) {
-                    renderPerformanceStats(data.performance_stats);
-                } else {
-                    console.log('Performance stats data is missing or invalid');
-                    performanceStatsContainer.innerHTML = '<p>No performance stats available</p>';
                 }
 
                 // Render active days chart
@@ -317,50 +324,83 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Render performance stats function
-    function renderPerformanceStats(stats) {
-        const performanceStats = stats.performance;
-        const statsContainer = document.getElementById('performanceStats');
-        if (!statsContainer) {
-            console.error('Performance stats container not found');
+    function renderEngagementStats(stats,userstats) {
+        const engagementStats = stats.performance;
+        const engagementContainer = document.getElementById('engagementStats');
+        if (!engagementContainer) {
+            console.error('Engagement stats container not found');
+            return;
+        }
+    
+        if (!engagementStats || Object.keys(engagementStats).length === 0) {
+            engagementContainer.innerHTML = '<p>No engagement stats available</p>';
             return;
         }
 
-        if (!performanceStats || Object.keys(performanceStats).length === 0) {
-            statsContainer.innerHTML = '<p>No performance stats available</p>';
-            return;
+        // Function to get rating badge class
+        function getRatingClass(rating) {
+            const ratingMap = {
+                'High': 'rating-high',
+                'Medium': 'rating-medium',
+                'Low': 'rating-low'
+            };
+            return ratingMap[rating] || '';
         }
-
-        statsContainer.innerHTML = `
+    
+        engagementContainer.innerHTML = `
+            <div class="engagement-stat">
                 <div class="stat-card">
-                    <div class="stat-value">
-                        <i class="fas fa-heart"></i>
-                        ${formatNumber(performanceStats.total_likes)}
+                    <div class="icon-wrapper orange">
+                        <i data-lucide="flame"></i>
                     </div>
-                    <div class="stat-label">Total Likes</div>
+                    <div class="stat-content">
+                        <div class="stat-value">
+                            ${engagementStats.engagement_rate.toFixed(2)}%
+                            <span class="rating-badge ${getRatingClass(engagementStats.profile_rating)}">
+                                ${engagementStats.profile_rating}
+                            </span>
+                        </div>
+                        <div class="stat-label">
+                        Engagement rate
+                        <span class="info-icon">
+                            <i data-lucide="info"></i>
+                            <span class="tooltip">Engagement rate is calculated based on average likes, comments, and shares per post relative to follower count</span>
+                        </span>
+                    </div>
+                    </div>
+                </div>  
+                <div class="stat-card">
+                    <div class="icon-wrapper blue">
+                        <i data-lucide="users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">${userstats.followers}</div>
+                        <div class="stat-label">Followers</div>
+                    </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">
-                        <i class="fas fa-comment"></i>
-                        ${formatNumber(performanceStats.total_comments)}
+                    <div class="icon-wrapper pink">
+                        <i data-lucide="heart"></i>
                     </div>
-                    <div class="stat-label">Total Comments</div>
+                    <div class="stat-content">
+                        <div class="stat-value">${formatNumber(engagementStats.avg_likes_per_post)}</div>
+                        <div class="stat-label">Average likes per post</div>
+                    </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">
-                        <i class="fas fa-play"></i>
-                        ${formatNumber(performanceStats.total_views)}
+                    <div class="icon-wrapper purple">
+                        <i data-lucide="message-circle"></i>
                     </div>
-                    <div class="stat-label">Total Views</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">
-                        <i class="fas fa-share"></i>
-                        ${formatNumber(performanceStats.total_shares)}
+                    <div class="stat-content">
+                        <div class="stat-value">${formatNumber(engagementStats.avg_comments_per_post)}</div>
+                        <div class="stat-label">Average comments per post</div>
                     </div>
-                    <div class="stat-label">Total Shares</div>
                 </div>
+            </div>
         `;
+    
+        // Refresh Lucide icons
+        lucide.createIcons();
     }
 
     // Error display function
