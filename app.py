@@ -9,7 +9,6 @@ import asyncio
 from dotenv import load_dotenv
 
 app = Flask(__name__)
-app.secret_key = "zuhairsan"
 logging.basicConfig(level=logging.DEBUG)
 
 scraper = TikTokMetaData()
