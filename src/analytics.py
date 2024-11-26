@@ -4,6 +4,9 @@ from flask import jsonify
 from src.database import get_db, Video,User
 from datetime import datetime,timedelta
 import json
+from flask import send_file
+import io
+import pandas as pd
 
 
 def get_user_info_fromdb(username):
@@ -33,6 +36,75 @@ def get_user_info_fromdb(username):
     finally:
         db.close()
 
+def download_fromdb(username, format):
+    try:
+        db = next(get_db())
+
+        user = db.query(User).filter(User.username == username).first()
+        videos = db.query(Video).filter(Video.username == username).all()
+          
+        if not user:
+            return jsonify({'status': 'error','message': 'User not found'}), 404
+        
+        # Prepare data for download
+        data = {
+            'user_info': {
+                'username': user.username,
+                'profile_data': user.profile_data
+            },
+            'videos': [
+                {
+                'id': video.video_metadata.get('id', ''),
+                'thumbnail': video.video_metadata.get('thumbnail', ''),
+                'title': video.video_metadata.get('title', ''),
+                'views': int(video.video_metadata.get('view_count', 0)),
+                'like_count': int(video.video_metadata.get('like_count', 0)),
+                'comment_count': int(video.video_metadata.get('comment_count', 0)),
+                'shares': int(video.video_metadata.get('repost_count', 0)),
+                'original_url': video.video_metadata.get('original_url', '')
+                } for video in videos
+            ]
+        }
+
+        # Determine download format
+        if format == 'json':
+            return send_file(
+                io.BytesIO(json.dumps(data, indent=2).encode()),
+                mimetype='application/json',
+                as_attachment=True,
+                download_name=f'{username}_data.json'
+            )
+        elif format in ['csv', 'xlsx']:
+            df = pd.DataFrame(data['videos'])
+            output = io.BytesIO()
+            
+            if format == 'csv':
+                df.to_csv(output, index=False)
+                mimetype = 'text/csv'
+                download_name = f'{username}_metadata_videos.csv'
+            elif format == 'xlsx':
+                df.to_excel(output, index=False, engine='openpyxl')
+                mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                download_name = f'{username}_metadata_videos.xlsx'
+            
+            output.seek(0)
+            return send_file(
+                output,
+                mimetype=mimetype,
+                as_attachment=True,
+                download_name=download_name
+            )
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid format. Supported formats are: json, csv, excel'
+            }), 400
+        
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    finally:
+        db.close()
+
 def get_top_videos(username):
     try:
         db = next(get_db())
@@ -40,7 +112,8 @@ def get_top_videos(username):
         videos = db.query(Video)\
             .filter(Video.username == username)\
             .all()
-            
+        
+       
         if not videos:
             return jsonify({
                 'status': 'error',

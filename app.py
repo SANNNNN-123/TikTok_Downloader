@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from src.metadata import TikTokMetaData
 from src.scraper import get_user_info
-from src.analytics import get_top_videos,get_trends_data,get_performance_data,get_active_days_data,get_duration_analysis,get_Engagement_data,get_user_info_fromdb
+from src.analytics import get_top_videos,get_trends_data,get_performance_data,get_active_days_data,get_duration_analysis,get_Engagement_data,get_user_info_fromdb,download_fromdb
 from src.database import init_db, Video,get_cached_user_data,store_user_data
 import pandas as pd
 import logging
@@ -26,10 +26,23 @@ def overview():
 def analytics():
     return render_template('analytics.html')
 
-@app.route('/download')
-def download_page():
-    return render_template('download.html')
-
+@app.route('/download/', defaults={'username': None}, methods=['GET'])
+@app.route('/download/<username>', methods=['GET', 'POST'])
+def download_page(username):
+    if request.method == 'GET':
+        return render_template('download.html', username=username)
+    
+    if not username:
+        return jsonify({'error': 'Username is required'}), 400
+        
+    format = request.form.get('format')
+    if not format:
+        return jsonify({'error': 'Format is required'}), 400
+        
+    try:
+        return download_fromdb(username, format)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/search', methods=['POST'])
 async def scrape():

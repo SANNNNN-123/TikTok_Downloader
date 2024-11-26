@@ -1,4 +1,19 @@
 document.addEventListener('DOMContentLoaded', function () {
+
+    // // Clear stored username on page load/refresh
+    // window.addEventListener('load', function() {
+    //     localStorage.removeItem('currentUsername');
+        
+    //     // Disable download button
+    //     const downloadButton = document.getElementById('downloadButton');
+    //     if (downloadButton) {
+    //         downloadButton.disabled = true;
+    //     }
+        
+    //     // Clear download history
+    //     clearDownloadHistory();
+    //     loadDownloadHistory();
+    // });
     
     // Sidebar menu open and close
     const sidebar = document.getElementById('sidebar');
@@ -210,7 +225,6 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadOverviewData(username) {
         const trendsContainer = document.getElementById('performanceGraph');
         const topVideosContainer = document.getElementById('topVideos');
-        //const performanceStatsContainer = document.getElementById('performanceStats');
         const durationBreakdownContainer = document.getElementById('durationBreakdown');
         const activeDaysChartContainer = document.getElementById('activeDaysChart');
         const engagementStatContainer = document.getElementById('engagementStats')
@@ -230,6 +244,36 @@ document.addEventListener('DOMContentLoaded', function () {
                 // console.log('Duration Breakdown:', data.duration_breakdown);
                 // console.log('Active Days:', data.active_days);
                 // console.log('Engagement data:', data.engagement_section);
+
+                // Update profile quick info
+                if (data.user_info) {
+                    // Profile Picture
+                    const profilePicOverview = document.getElementById('profilePic');
+                    const profileNameOverview = document.getElementById('profileName');
+                    const verifiedBadgeOverview = document.getElementById('verifiedBadge');
+
+                    if (profilePicOverview) {
+                        profilePicOverview.src = data.user_info.profile_pic || '/static/default-profile.png';
+                        profilePicOverview.alt = data.user_info.username || 'Profile Picture';
+                    }
+
+                    // Profile Name
+                    if (profileNameOverview) {
+                        profileNameOverview.textContent = data.user_info.name || data.user_info.username;
+                    }
+
+                    // Verified Badge
+                    if (verifiedBadgeOverview) {
+                        if (data.user_info.is_verified) {
+                            verifiedBadgeOverview.classList.remove('hidden');
+                        } else {
+                            verifiedBadgeOverview.classList.add('hidden');
+                        }
+                    }
+
+                    // Rest of the existing profile display logic remains the same
+                    updateProfileDisplay(data.user_info);
+                }
 
                 // Render performance stats
                 if (data.engagement_section && engagementStatContainer) {
@@ -478,6 +522,232 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         return num.toString();
     }
+
+    // Download  button handler
+    const downloadButton = document.getElementById('downloadButton');
+    if (downloadButton) {
+        downloadButton.addEventListener('click', function () {
+            const username = localStorage.getItem('currentUsername');
+            if (username) {
+                window.location.href = `/download?username=${encodeURIComponent(username)}`;
+            } else {
+                showError('Please search for a profile first.');
+            }
+        });
+        
+        // Initially disable the analyze button
+        downloadButton.disabled = true;
+    }
+
+    // Download functionality
+    const formatCards = document.querySelectorAll('.format-card');
+    formatCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const format = this.getAttribute('data-format');
+            downloadData(format);
+        });
+    });
+
+    function downloadData(format) {
+        const username = localStorage.getItem('currentUsername');
+        if (!username) {
+            showErrorMessage('Please search for a profile before downloading data.');
+            return;
+        }
+
+        showLoadingIndicator();
+
+        fetch(`/download/${encodeURIComponent(username)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `format=${format}`
+        })  
+        .then(response => {
+            if (response.ok) {
+                return response.blob();
+            }
+            return response.json().then(err => {
+                throw new Error(err.message || 'Download failed');
+            });
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            
+            const filename = `${username}_data.${format}`;
+            a.download = filename;
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            updateDownloadHistory(filename, format);
+            showSuccessMessage(`Data downloaded successfully in ${format.toUpperCase()} format.`);
+        })
+        .catch(error => {
+            console.error('Download error:', error);
+            showErrorMessage(error.message);
+        })
+        .finally(() => {
+            hideLoadingIndicator();
+        });
+    }
+
+    function updateDownloadHistory(filename, format) {
+        const historyList = document.getElementById('downloadHistory');
+        const emptyHistory = historyList.querySelector('.empty-history');
+        if (emptyHistory) {
+            emptyHistory.remove();
+        }
+        
+        const historyItem = document.createElement('div');
+        historyItem.classList.add('history-item');
+        historyItem.innerHTML = `
+            <span class="history-filename">${filename}</span>
+            <span class="history-format">${format.toUpperCase()}</span>
+            <span class="history-date">${new Date().toLocaleString()}</span>
+        `;
+        
+        historyList.insertBefore(historyItem, historyList.firstChild);
+        
+        while (historyList.children.length > 5) {
+            historyList.removeChild(historyList.lastChild);
+        }
+        
+        saveDownloadHistory();
+    }
+    
+    function saveDownloadHistory() {
+        const historyList = document.getElementById('downloadHistory');
+        const historyItems = Array.from(historyList.querySelectorAll('.history-item'))
+            .map(item => ({
+                filename: item.querySelector('.history-filename').textContent,
+                format: item.querySelector('.history-format').textContent,
+                date: item.querySelector('.history-date').textContent
+            }));
+        
+        localStorage.setItem('downloadHistory', JSON.stringify(historyItems));
+    }
+
+    function clearDownloadHistory() {
+        // Remove from localStorage
+        localStorage.removeItem('downloadHistory');
+        
+        // Clear the history list in the DOM
+        const historyList = document.getElementById('downloadHistory');
+        historyList.innerHTML = `
+            <div class="empty-history">
+                <p>No recent downloads</p>
+            </div>
+        `;
+    }
+
+    function loadDownloadHistory() {
+        const historyList = document.getElementById('downloadHistory');
+        const savedHistory = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
+        
+        // If no saved history, ensure empty state
+        if (savedHistory.length === 0) {
+            historyList.innerHTML = `
+                <div class="empty-history">
+ 
+                </div>
+            `;
+            return;
+        }
+    
+        // Clear existing content
+        historyList.innerHTML = '';
+        
+        // Add history items
+        savedHistory.forEach(item => {
+            const historyItem = document.createElement('div');
+            historyItem.classList.add('history-item');
+            historyItem.innerHTML = `
+                <span class="history-filename">${item.filename}</span>
+                <span class="history-format">${item.format}</span>
+                <span class="history-date">${item.date}</span>
+            `;
+            historyList.appendChild(historyItem);
+        });
+    }
+    
+    function showLoadingIndicator() {
+        const formatCards = document.querySelectorAll('.format-card');
+        formatCards.forEach(card => {
+            card.classList.add('loading');
+            const icon = card.querySelector('.format-icon');
+            if (icon) {
+                icon.innerHTML = '<div class="spinner"></div>';
+            }
+        });
+    }
+    
+    function hideLoadingIndicator() {
+        const formatCards = document.querySelectorAll('.format-card');
+        formatCards.forEach(card => {
+            card.classList.remove('loading');
+            const icon = card.querySelector('.format-icon');
+            if (icon) {
+                icon.innerHTML = card.getAttribute('data-original-icon');
+            }
+        });
+    }
+
+    function showErrorMessage(message) {
+        const errorContainer = document.createElement('div');
+        errorContainer.classList.add('error-message');
+        errorContainer.textContent = message;
+        document.body.appendChild(errorContainer);
+        
+        setTimeout(() => {
+            errorContainer.remove();
+        }, 5000);
+    }
+    
+    function showSuccessMessage(message) {
+        const successContainer = document.createElement('div');
+        successContainer.classList.add('success-message');
+        successContainer.textContent = message;
+        document.body.appendChild(successContainer);
+        
+        setTimeout(() => {
+            successContainer.remove();
+        }, 5000);
+    }
+    
+    // Initialize download history and format card icons
+    loadDownloadHistory();
+    formatCards.forEach(card => {
+        const icon = card.querySelector('.format-icon');
+        if (icon) {
+            card.setAttribute('data-original-icon', icon.innerHTML);
+        }
+    });
+
+    // Clear history on page load/refresh
+    window.addEventListener('load', function() {
+        // Option 1: Clear history every time page loads
+        clearDownloadHistory();
+
+        // Option 2: Only clear if it's a new session
+        const isNewSession = !sessionStorage.getItem('sessionStarted');
+        if (isNewSession) {
+            clearDownloadHistory();
+            sessionStorage.setItem('sessionStarted', 'true');
+        }
+
+        // Then load any persisting history
+        loadDownloadHistory();
+    });
     
 });
+
+
 
