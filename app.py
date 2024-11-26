@@ -48,16 +48,25 @@ async def scrape():
                 'source': 'cache'
             })
         
-        # If not in cache, fetch new data
-        # Run both scraping functions concurrently
-        logging.debug(f"Fetching new data for {username}")
-        user_info_task = asyncio.create_task(get_user_info(username))
-        videos_task = asyncio.create_task(scraper.get_user_videos(username))
-        
-        profile_data, videos_data = await asyncio.gather(user_info_task, videos_task)
+        # First check if user exists
+        logging.debug(f"Checking if user {username} exists")
+        profile_data = await get_user_info(username)
 
-        if profile_data and videos_data:
-            # Store data in database
+        if not profile_data:
+            logging.error(f"User {username} does not exist")
+            return jsonify({
+                'status': 'error',
+                'message': 'This user does not exist.',
+                'exists': False
+            })
+
+        # User exists, now try to fetch videos
+        logging.debug(f"User exists, fetching videos for {username}")
+        videos_data = await scraper.get_user_videos(username)
+
+        # Check if we can access videos
+        if videos_data:
+            # Store complete data in database
             await store_user_data(username, profile_data, videos_data)
         
             logging.debug(f"Stored user info and {len(videos_data)} videos in database for {username}")
@@ -67,22 +76,22 @@ async def scrape():
                 'profile': profile_data,
                 'source': 'fresh'
             })
-        elif profile_data or videos_data:
-            logging.error(f"User {username} exist, but profile is private")
-            return jsonify({
-                'success': False,
-                'message': 'The user profile is private.'
-            })
         else:
-            # Neither user info nor videos exist (user doesn't exist)
-            logging.error(f"User {username} does not exist")
+            # Profile exists but no videos (private profile)
+            logging.warning(f"User {username} exists but profile is private")
             return jsonify({
-                'success': False,
-                'message': 'The user does not exist.'
+                'status': 'error',
+                'message': 'This profile is private.',
+                'profile': profile_data,
+                'isPrivate': True
             })
+
     except Exception as e:
         print(f"Error analyzing profile: {e}") 
-        return jsonify({'status': 'error', 'message': f'Error analyzing profile: {str(e)}'}), 500
+        return jsonify({
+            'status': 'error', 
+            'message': f'Error analyzing profile: {str(e)}'
+        }), 500
     
 @app.route('/api/overview/<username>')
 def get_overview_data(username):

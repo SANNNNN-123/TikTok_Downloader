@@ -1,16 +1,80 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="dashboard-grid">
+    <div class="header">
+        <h1>Download Analytics Data</h1>
+        <p>Export your TikTok analytics data in different formats</p>
+    </div>
 
+    <div class="download-container">
+        <!-- Format Selection Cards -->
+        <div class="format-grid">
+            <!-- JSON Format Card -->
+            <div class="format-card" onclick="downloadData('json')">
+                <div class="format-icon json">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" x2="12" y1="15" y2="3"/>
+                    </svg>
+                </div>
+                <div class="format-info">
+                    <h3>JSON</h3>
+                    <p>Raw data format, ideal for developers</p>
+                </div>
+            </div>
 
-<div class="download-section">
-    <h3>Download Data</h3>
-    <div id="downloadButtons">
-        <button onclick="downloadData('json')">Download JSON</button>
-        <button onclick="downloadData('csv')">Download CSV</button>
-        <button onclick="downloadData('excel')">Download Excel</button>
+            <!-- CSV Format Card -->
+            <div class="format-card" onclick="downloadData('csv')">
+                <div class="format-icon csv">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                </div>
+                <div class="format-info">
+                    <h3>CSV</h3>
+                    <p>Spreadsheet format, compatible with all tools</p>
+                </div>
+            </div>
+
+            <!-- Excel Format Card -->
+            <div class="format-card" onclick="downloadData('excel')">
+                <div class="format-icon excel">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <line x1="10" y1="9" x2="8" y2="9"/>
+                    </svg>
+                </div>
+                <div class="format-info">
+                    <h3>Excel</h3>
+                    <p>Microsoft Excel format with formatted tables</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Download History -->
+        <div class="download-history">
+            <h3>Recent Downloads</h3>
+            <div class="history-list" id="downloadHistory">
+                <!-- History items will be populated by JavaScript -->
+                <div class="empty-history">
+                    <p>No recent downloads</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="downloadLoading" class="download-loading hidden">
+        <div class="download-loading-content">
+            <div class="download-spinner"></div>
+            <p>Preparing your download...</p>
+        </div>
     </div>
 </div>
-
-
 {% endblock %}

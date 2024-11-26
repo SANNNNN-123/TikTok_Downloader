@@ -91,13 +91,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         loadingContainer.style.display = 'none';
                         
                         if (data.status === 'success') {
-                            // Display success message
+                            // Success case - profile found with videos
                             const successMessage = document.createElement('div');
                             successMessage.className = 'alert alert-success';
                             const sourceText = data.source === 'cache' ? 
                                 'Retrieved from cache' : 
                                 'Fetched new data';
-                            successMessage.textContent = `${sourceText}: Found profile data for @${username}`;
+                            successMessage.textContent = `Found profile data for @${username}`;
                             searchResults.appendChild(successMessage);
     
                             // Update profile information
@@ -117,12 +117,35 @@ document.addEventListener('DOMContentLoaded', function () {
                                 analyzeButton.disabled = false;
                             }
                         } else {
-                            // Display an error message
-                            //console.log('Failed to retreived data', data.message);
-                            const errorMessage = document.createElement('div');
-                            errorMessage.className = 'alert alert-danger';
-                            errorMessage.textContent = data.message;
-                            searchResults.appendChild(errorMessage);
+                            // Handle different error cases
+                            const messageElement = document.createElement('div');
+                            
+                            if (data.isPrivate) {
+                                // Private profile case
+                                messageElement.className = 'alert alert-warning';
+                                messageElement.innerHTML = `
+                                    <h4 class="alert-heading">Private Profile</h4>
+                                    <p>The profile @${username} is private. We can see basic profile information but cannot access their videos.</p>
+                                `;
+                                
+                                // Still show profile info if available
+                                if (data.profile) {
+                                    updateProfileDisplay(data.profile);
+                                }
+                            } else if (data.exists === false) {
+                                // Non-existent user case
+                                messageElement.className = 'alert alert-danger';
+                                messageElement.innerHTML = `
+                                    <h4 class="alert-heading">User Not Found</h4>
+                                    <p>The user @${username} does not exist.</p>
+                                `;
+                            } else {
+                                // Generic error case
+                                messageElement.className = 'alert alert-danger';
+                                messageElement.textContent = data.message || 'An error occurred while fetching the profile.';
+                            }
+                            
+                            searchResults.appendChild(messageElement);
                         }
                     }, 500);
     
@@ -195,18 +218,18 @@ document.addEventListener('DOMContentLoaded', function () {
         showLoading(); 
 
         try {
-            console.log('Fetching overview data for:', username);
+            //console.log('Fetching overview data for:', username);
             const response = await fetch(`/api/overview/${encodeURIComponent(username)}`);
             const data = await response.json();
-            console.log('Received overview data:', data);
+            //console.log('Received overview data:', data);
 
             if (data.status === 'success') {
-                console.log('Profile data:', data.user_info);
-                console.log('Performance Trends:', data.trends);
-                console.log('Top Videos:', data.topVideos);
-                console.log('Duration Breakdown:', data.duration_breakdown);
-                console.log('Active Days:', data.active_days);
-                console.log('Engagement data:', data.engagement_section);
+                // console.log('Profile data:', data.user_info);
+                // console.log('Performance Trends:', data.trends);
+                // console.log('Top Videos:', data.topVideos);
+                // console.log('Duration Breakdown:', data.duration_breakdown);
+                // console.log('Active Days:', data.active_days);
+                // console.log('Engagement data:', data.engagement_section);
 
                 // Render performance stats
                 if (data.engagement_section && engagementStatContainer) {
@@ -231,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.active_days && activeDaysChartContainer) {
                     try {
                         const activeDaysData = data.active_days;
-                        console.log('activeDaysData', activeDaysData)
+                        //console.log('activeDaysData', activeDaysData)
                         Plotly.newPlot('activeDaysChart', activeDaysData.graph.data, activeDaysData.graph.layout);
                     } catch (error) {
                         console.error('Error parsing active days data:', error);
@@ -246,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (data.duration_breakdown && durationBreakdownContainer) {
                     try {
                         const durationData = data.duration_breakdown;
-                        console.log('durationData', durationData)
+                        //console.log('durationData', durationData)
                         Plotly.newPlot('durationBreakdown', durationData.graph.data, durationData.graph.layout);
                     } catch (error) {
                         console.error('Error parsing duration breakdown data:', error);
@@ -278,7 +301,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        console.log('Rendering top videos:', videos);
+        //console.log('Rendering top videos:', videos);
 
         if (!Array.isArray(videos) || videos.length === 0) {
             console.log('No videos found or invalid data');
@@ -289,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function () {
         videosContainer.innerHTML = '';
 
         videos.forEach((video, index) => {
-            console.log(`Rendering video ${index + 1}:`, video);
+            //console.log(`Rendering video ${index + 1}:`, video);
             const videoCard = document.createElement('div');
             videoCard.className = 'video-card';
             videoCard.style.cursor = 'pointer';
