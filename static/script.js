@@ -1,19 +1,76 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-    // // Clear stored username on page load/refresh
-    // window.addEventListener('load', function() {
-    //     localStorage.removeItem('currentUsername');
-        
-    //     // Disable download button
-    //     const downloadButton = document.getElementById('downloadButton');
-    //     if (downloadButton) {
-    //         downloadButton.disabled = true;
-    //     }
-        
-    //     // Clear download history
-    //     clearDownloadHistory();
-    //     loadDownloadHistory();
-    // });
+    // Highlight the current page in the navigation
+    const currentPage = window.location.pathname.split('/').pop();
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        if (item.getAttribute('data-page') === currentPage) {
+            item.classList.add('active');
+        }
+    });
+
+
+    // Comments form
+    if (currentPage === 'comments') {
+        const form = document.getElementById('feedbackForm');
+        const stars = document.querySelectorAll('.star-rating input');
+        const popup = document.getElementById('popup');
+        const popupMessage = document.getElementById('popup-message');
+        const closePopup = document.querySelector('.close');
+
+        if (form && stars.length && popup && popupMessage && closePopup) {
+            stars.forEach((star) => {
+                star.addEventListener('change', () => {
+                    const rating = star.value;
+                    stars.forEach((s, index) => {
+                        if (index < rating) {
+                            s.nextElementSibling.style.color = '#ffca08';
+                        } else {
+                            s.nextElementSibling.style.color = '#ddd';
+                        }
+                    });
+                });
+            });
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                
+                fetch('/comments', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    popupMessage.textContent = data.message;
+                    popup.style.display = 'block';
+                    popup.querySelector('.popup-content').className = `popup-content ${data.status}`;
+                    
+                    if (data.status === 'success') {
+                        form.reset();
+                        stars.forEach(s => s.nextElementSibling.style.color = '#ddd');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    popupMessage.textContent = 'An unexpected error occurred. Please try again.';
+                    popup.style.display = 'block';
+                    popup.querySelector('.popup-content').className = 'popup-content error';
+                });
+            });
+
+            closePopup.addEventListener('click', function() {
+                popup.style.display = 'none';
+            });
+
+            window.addEventListener('click', function(event) {
+                if (event.target === popup) {
+                    popup.style.display = 'none';
+                }
+            });
+        }
+    }
     
     // Sidebar menu open and close
     const sidebar = document.getElementById('sidebar');
@@ -31,14 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     
     
-    // Highlight the current page in the navigation
-    const currentPage = window.location.pathname.split('/').pop();
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-        if (item.getAttribute('data-page') === currentPage) {
-            item.classList.add('active');
-        }
-    });
+    
 
     // Elements related to the search functionality
     const searchButton = document.getElementById('search-button');
@@ -656,7 +706,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (savedHistory.length === 0) {
             historyList.innerHTML = `
                 <div class="empty-history">
- 
+                    <p>No recent downloads</p>
                 </div>
             `;
             return;

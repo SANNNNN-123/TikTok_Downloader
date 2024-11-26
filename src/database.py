@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, JSON, DateTime, Index
+from sqlalchemy import create_engine, Column, Integer,Float, String, JSON, DateTime, Index
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import inspect
 from datetime import datetime
@@ -45,6 +45,20 @@ class Video(Base):
         Index('idx_username_updated', 'username', 'updated_at'),
     )
 
+class Comment(Base):
+    __tablename__ = "comments"
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    rating = Column(Float, nullable=False)
+    comment = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.now)
+
+    __table_args__ = (
+        Index('idx_name', 'name'),
+        Index('idx_created_at', 'created_at'),
+    )
+
 def get_db():
     db = SessionLocal()
     try:
@@ -57,7 +71,7 @@ def init_db():
     inspector = inspect(engine)
     existing_tables = inspector.get_table_names()
 
-    if "users" in existing_tables and "videos" in existing_tables:
+    if "users" in existing_tables and "videos" in existing_tables and "comments" in existing_tables:
         print("Tables already exist. Skipping creation.")
     else:
         print("Tables do not exist. Creating tables.")
@@ -139,5 +153,39 @@ async def store_user_data(username, profile_data, videos_data):
         print(f"Database error: {str(e)}")
         db.rollback()
         raise
+    finally:
+        db.close()
+
+async def store_comment(name, rating, comment):
+    db = next(get_db())
+    try:
+        comment_record = Comment(
+            name=name,
+            rating=rating,
+            comment=comment
+        )
+        db.add(comment_record)
+        db.commit()
+        return True
+    except Exception as e:
+        print(f"Database error: {str(e)}")
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+async def get_comments():
+    db = next(get_db())
+    try:
+        comments = db.query(Comment).order_by(Comment.created_at.desc()).all()
+        return [
+            {
+                "name": comment.name,
+                "rating": comment.rating,
+                "comment": comment.comment,
+                "created_at": comment.created_at
+            }
+            for comment in comments
+        ]
     finally:
         db.close()

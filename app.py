@@ -2,13 +2,14 @@ from flask import Flask, render_template, request, jsonify
 from src.metadata import TikTokMetaData
 from src.scraper import get_user_info
 from src.analytics import get_top_videos,get_trends_data,get_performance_data,get_active_days_data,get_duration_analysis,get_Engagement_data,get_user_info_fromdb,download_fromdb
-from src.database import init_db, Video,get_cached_user_data,store_user_data
+from src.database import init_db, Video,get_cached_user_data,store_user_data,store_comment, get_comments
 import pandas as pd
 import logging
 import asyncio
 from dotenv import load_dotenv
 
 app = Flask(__name__)
+app.secret_key = "zuhairsan"
 logging.basicConfig(level=logging.DEBUG)
 
 scraper = TikTokMetaData()
@@ -25,6 +26,28 @@ def overview():
 @app.route('/analytics')
 def analytics():
     return render_template('analytics.html')
+
+@app.route('/comments', methods=['GET', 'POST'])
+async def comments():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        rating = request.form.get('rating')
+        comment = request.form.get('comment')
+        
+        if name and rating and comment:
+            try:
+                rating = float(rating)
+                success = await store_comment(name, rating, comment)
+                if success:
+                    return jsonify({"status": "success", "message": "Thank you for your feedback!"}), 200
+                else:
+                    return jsonify({"status": "error", "message": "There was an error submitting your feedback. Please try again."}), 500
+            except ValueError:
+                return jsonify({"status": "error", "message": "Invalid rating value. Please provide a number between 1 and 5."}), 400
+        else:
+            return jsonify({"status": "error", "message": "Please fill out all fields."}), 400
+    
+    return render_template('comments.html')
 
 @app.route('/download/', defaults={'username': None}, methods=['GET'])
 @app.route('/download/<username>', methods=['GET', 'POST'])
