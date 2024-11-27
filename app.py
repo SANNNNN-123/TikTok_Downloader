@@ -22,10 +22,6 @@ def index():
 def overview():
     return render_template('overview.html')
 
-@app.route('/analytics')
-def analytics():
-    return render_template('analytics.html')
-
 @app.route('/comments', methods=['GET', 'POST'])
 async def comments():
     if request.method == 'POST':
@@ -158,7 +154,6 @@ def get_overview_data(username):
         # Get engagement data
         engagement_response = get_Engagement_data(username)
         engagement_data = engagement_response.json
-        print(engagement_data)
 
         response_data = {
             'status': 'success',
@@ -175,7 +170,11 @@ def get_overview_data(username):
         
     except Exception as e:
         return jsonify({'status': 'error','message': str(e)}), 500
-    
+
+@app.route('/analytics')
+def analytics():
+    return render_template('analytics.html')
+
 @app.route('/api/analytics/<username>')
 def get_analytics_data(username):
     try:
@@ -183,10 +182,9 @@ def get_analytics_data(username):
         profile_response = get_user_info_fromdb(username)
         profile_data = profile_response.json
  
-        # Get trends data
+        # Get analytics data
         analytics_response = get_analytics_table(username)
         analytics_data = analytics_response.json
-        print(analytics_data)
 
         response_data = {
             'status': 'success',

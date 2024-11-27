@@ -256,6 +256,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Analytic page functionality
+    if (currentPage === 'analytics') {
+        const username = localStorage.getItem('currentUsername');
+        loadAnalyticsData(username);
+    }
+
     function showLoading() {
         if (loadingState) {
             loadingState.style.display = 'flex';
@@ -384,6 +390,154 @@ document.addEventListener('DOMContentLoaded', function () {
             showError('An error occurred while loading overview data');
         } finally {
             hideLoading(); // Hide loading state regardless of success or failure
+        }
+    }
+
+    async function loadAnalyticsData(username) {
+        const statsContainer = document.querySelector('.stats-container');
+        const graphContainer = document.querySelector('.graph-container');
+        const analyticsGrid = document.querySelector('.analytics-grid');
+    
+        showLoading();
+    
+        try {
+            const response = await fetch(`/api/analytics/${encodeURIComponent(username)}`);
+            const data = await response.json();
+    
+            if (data.status === 'success') {
+                // Update profile information
+                updateProfileInfo(data.user_info,data.trends);
+    
+                // Update metrics
+                console.log("trends", data.trends)
+                updateMetrics(data.trends);
+    
+                // Update graph container (placeholder for now)
+                graphContainer.innerHTML = '<p>Graph will be implemented here</p>';
+    
+                // Update analytics grid
+                updateAnalyticsGrid(data.trends);
+    
+            } else {
+                console.error('Failed to load analytics data:', data.message);
+                showError(data.message || 'Failed to load analytics data');
+            }
+        } catch (error) {
+            console.error('Error loading analytics:', error);
+            showError('An error occurred while loading analytics data');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function updateProfileInfo(userInfo,userVideos) {
+        const usernameElement = document.querySelector('.username');
+        const videoCountElement = document.querySelector('.video-count');
+        const profileIcon = document.querySelector('.profile-icon');
+    
+        if (userInfo && userVideos) {
+            usernameElement.textContent = `@${userInfo.username}`;
+            videoCountElement.textContent = `${userVideos.total_video || 0} videos analyzed`;
+            if (userInfo.profile_pic) {
+                profileIcon.src = userInfo.profile_pic;
+                profileIcon.alt = `${userInfo.username}'s profile picture`;
+            }
+        }
+    }
+
+    
+    function updateMetrics(trends) {
+        const metricCards = document.querySelectorAll('.metric-card');
+        
+        const metrics = [
+            { label: 'Viral Videos', value: trends.viral_percentage, subtext: `${trends.viral_percentage || 0}%` },
+            { label: 'Avg Views', value: formatNumber(trends.avg_views || 0) },
+            { label: 'Median Views', value: formatNumber(trends.median_views || 0) },
+            { label: 'Most Viewed', value: formatNumber(trends.most_views || 0) }
+        ];
+    
+        metricCards.forEach((card, index) => {
+            const metric = metrics[index];
+            card.querySelector('h3').textContent = metric.label;
+            card.querySelector('.metric-value').textContent = metric.value;
+            if (metric.subtext) {
+                let subtextElement = card.querySelector('.metric-subtext');
+                if (!subtextElement) {
+                    subtextElement = document.createElement('div');
+                    subtextElement.className = 'metric-subtext';
+                    card.appendChild(subtextElement);
+                }
+                subtextElement.textContent = metric.subtext;
+            }
+        });
+    }
+    
+    function updateMetrics(trends) {
+        const metricCards = document.querySelectorAll('.metric-card');
+        
+        const metrics = [
+            { label: 'Viral Videos', value: trends.viral_video_count || 0, subtext: `${(trends.viral_percentage || 0).toFixed(2)}%` },
+            { label: 'Avg Views', value: formatNumberV2(trends.avg_views || 0) },
+            { label: 'Median Views', value: formatNumberV2(trends.median_views || 0) },
+            { label: 'Most Viewed', value: formatNumberV2(trends.most_views || 0) }
+        ];
+    
+        metricCards.forEach((card, index) => {
+            const metric = metrics[index];
+            card.querySelector('h3').textContent = metric.label;
+            card.querySelector('.metric-value').textContent = metric.value;
+            if (metric.subtext) {
+                let subtextElement = card.querySelector('.metric-subtext');
+                if (!subtextElement) {
+                    subtextElement = document.createElement('div');
+                    subtextElement.className = 'metric-subtext';
+                    card.appendChild(subtextElement);
+                }
+                subtextElement.textContent = metric.subtext;
+            }
+        });
+    }
+    
+    function updateAnalyticsGrid(trends) {
+        const analyticsCards = document.querySelectorAll('.analytics-card');
+        
+        // Most Viral Video
+        if (trends.most_viral_video) {
+            analyticsCards[0].innerHTML = `
+                <h3>Most Viral Video</h3>
+                <div class="viral-video">
+                    <img src="${trends.most_viral_video.thumbnail}" alt="Most viral video thumbnail">
+                    <div class="viral-video-info">
+                        <p>${trends.most_viral_video.title}</p>
+                        <p>Views: ${formatNumber(trends.most_viral_video.views)}</p>
+                        <p>Likes: ${formatNumber(trends.most_viral_video.like_count)}</p>
+                    </div>
+                </div>
+            `;
+        }
+    
+        // Virality Median Analysis
+        if (trends.virality_median) {
+            analyticsCards[1].innerHTML = `
+                <h3>Virality Median Analysis</h3>
+                <ul>
+                    ${Object.entries(trends.virality_median).map(([key, value]) => `
+                        <li>${key}: ${value}</li>
+                    `).join('')}
+                </ul>
+            `;
+        }
+    
+        // Duration Analysis
+        if (trends.duration_analysis) {
+            analyticsCards[2].innerHTML = `
+                <h3>Duration Analysis</h3>
+                <ul>
+                    ${Object.entries(trends.duration_analysis).map(([key, value]) => `
+                        <li>${key}: ${formatNumber(value)} views</li>
+                    `).join('')}
+                </ul>
+            `;
         }
     }
 
@@ -562,7 +716,6 @@ document.addEventListener('DOMContentLoaded', function () {
         analyzeButton.disabled = true;
     }
 
-    // Helper function to format numbers
     function formatNumber(num) {
         if (num >= 1000000) {
         return (num / 1000000).toFixed(1) + 'M';
@@ -571,6 +724,13 @@ document.addEventListener('DOMContentLoaded', function () {
         return (num / 1000).toFixed(1) + 'K';
         }
         return num.toString();
+    }
+
+    function formatNumberV2(num) {
+        return num.toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
     }
 
     // Download  button handler

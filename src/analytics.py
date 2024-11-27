@@ -133,10 +133,35 @@ def get_analytics_table(username):
                 'shares': int(video_data.get('repost_count', 0)),
                 'original_url': video_data.get('original_url', '')
             })
+
+        # Calculate average views
+        avg_views = sum(video['views'] for video in all_videos) / len(all_videos)
+
+        # Calculate median views
+        sorted_views = sorted(video['views'] for video in all_videos)
+        n = len(sorted_views)
+        median_views = sorted_views[n//2] if n % 2 != 0 else \
+            (sorted_views[n//2 - 1] + sorted_views[n//2]) / 2
         
+        # Calculate viral percentage (videos with views > 10x median)
+        viral_threshold = median_views * 10
+        viral_videos = [video for video in all_videos if video['views'] > viral_threshold]
+        viral_percentage = (len(viral_videos) / len(all_videos)) * 100
+        viral_video_count = len(viral_videos)
+
+
+        # Find video with most views
+        most_viewed_video = max(all_videos, key=lambda x: x['views'])
+
         return jsonify({
             'status': 'success',
-            'videos': all_videos
+            'videos': all_videos,
+            'avg_views' : avg_views,
+            'median_views' : median_views,
+            'most_views' : most_viewed_video['views'],
+            'viral_percentage': viral_percentage,
+            'viral_video_count': viral_video_count,
+            'total_video' : len(all_videos)
         })
         
     except Exception as e:
@@ -868,13 +893,6 @@ def get_Engagement_data(username):
         avg_comments_per_post = recent_comments / recent_video_count if recent_video_count > 0 else 0
         avg_views_per_post = recent_views / recent_video_count if recent_video_count > 0 else 0
 
-        all_video_count = len(parsed_videos)
-        avg_views = total_views / all_video_count if all_video_count > 0 else 0
-
-
-        # profile_response = get_user_info_fromdb(username)
-        # profile_data = profile_response.json
-
         # Calculate engagement rate based on all videos
         engagement_rate = 0
         if total_views > 0:
@@ -897,7 +915,6 @@ def get_Engagement_data(username):
                 'avg_likes_per_post': round(avg_likes_per_post, 2),
                 'avg_comments_per_post': round(avg_comments_per_post, 2),
                 'avg_views_per_post': round(avg_views_per_post, 2),
-                'avg_views': round(avg_views,2),
                 'engagement_rate': round(engagement_rate, 2),
                 'recent_posts_analyzed': recent_video_count,
                 'total_posts_analyzed': len(parsed_videos),

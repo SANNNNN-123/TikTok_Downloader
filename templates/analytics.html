@@ -1,9 +1,59 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="analytics-container">
+    <!-- Top Stats Container -->
+    <div class="stats-container">
+        <div class="profile-section">
+            <div class="profile-info">
+                <img src="" alt="Profile Icon" class="profile-icon">
+                <div class="profile-text">
+                    <h2 class="username"></h2>
+                    <span class="video-count"></span>
+                </div>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Viral Videos</h3>
+                    <div class="metric-value"></div>
+                    <div class="metric-subtext"></div>
+                </div>
+                <div class="metric-card">
+                    <h3>Avg Views</h3>
+                    <div class="metric-value"></div>
+                </div>
+                <div class="metric-card">
+                    <h3>Median Views</h3>
+                    <div class="metric-value"></div>
+                </div>
+                <div class="metric-card">
+                    <h3>Most Viewed</h3>
+                    <div class="metric-value"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Middle Container (Graph Area) -->
+    <div class="graph-container">
+        <!-- Graph content will be added later -->
+    </div>
 
-
-
-
+    <!-- Bottom Analytics Grid -->
+    <div class="analytics-grid">
+        <div class="analytics-card">
+            <h3>Most Viral Video</h3>
+            <!-- Content will be added later -->
+        </div>
+        <div class="analytics-card">
+            <h3>Virality Median Analysis</h3>
+            <!-- Content will be added later -->
+        </div>
+        <div class="analytics-card">
+            <h3>Duration Analysis</h3>
+            <!-- Content will be added later -->
+        </div>
+    </div>
+</div>
 {% endblock %}
+
