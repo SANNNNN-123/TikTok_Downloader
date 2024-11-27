@@ -105,6 +105,45 @@ def download_fromdb(username, format):
     finally:
         db.close()
 
+def get_analytics_table(username):
+    try:
+        db = next(get_db())
+
+        videos = db.query(Video)\
+            .filter(Video.username == username)\
+            .all()
+        
+        if not videos:
+            return jsonify({
+                'status': 'error',
+                'message': 'No videos found for the user'
+            }), 404
+            
+        # Process all videos
+        all_videos = []
+        for video in videos:
+            video_data = video.video_metadata 
+            all_videos.append({
+                'id': video_data.get('id', ''),
+                'thumbnail': video_data.get('thumbnail', ''),
+                'title': video_data.get('title', ''),
+                'views': int(video_data.get('view_count', 0)),
+                'like_count': int(video_data.get('like_count', 0)),
+                'comment_count': int(video_data.get('comment_count', 0)),
+                'shares': int(video_data.get('repost_count', 0)),
+                'original_url': video_data.get('original_url', '')
+            })
+        
+        return jsonify({
+            'status': 'success',
+            'videos': all_videos
+        })
+        
+    except Exception as e:
+        return jsonify({'status': 'error','message': str(e)}), 500
+    finally:
+        db.close()
+
 def get_top_videos(username):
     try:
         db = next(get_db())
@@ -818,6 +857,7 @@ def get_Engagement_data(username):
         recent_videos = parsed_videos[:10]
         recent_video_count = len(recent_videos)
         
+        
         # Calculate averages based on recent 10 videos
         recent_likes = sum(int(v.video_metadata.get('like_count', 0)) for v in recent_videos)
         recent_comments = sum(int(v.video_metadata.get('comment_count', 0)) for v in recent_videos)
@@ -827,7 +867,10 @@ def get_Engagement_data(username):
         avg_likes_per_post = recent_likes / recent_video_count if recent_video_count > 0 else 0
         avg_comments_per_post = recent_comments / recent_video_count if recent_video_count > 0 else 0
         avg_views_per_post = recent_views / recent_video_count if recent_video_count > 0 else 0
-        
+
+        all_video_count = len(parsed_videos)
+        avg_views = total_views / all_video_count if all_video_count > 0 else 0
+
 
         # profile_response = get_user_info_fromdb(username)
         # profile_data = profile_response.json
@@ -854,6 +897,7 @@ def get_Engagement_data(username):
                 'avg_likes_per_post': round(avg_likes_per_post, 2),
                 'avg_comments_per_post': round(avg_comments_per_post, 2),
                 'avg_views_per_post': round(avg_views_per_post, 2),
+                'avg_views': round(avg_views,2),
                 'engagement_rate': round(engagement_rate, 2),
                 'recent_posts_analyzed': recent_video_count,
                 'total_posts_analyzed': len(parsed_videos),

@@ -686,20 +686,29 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function clearDownloadHistory() {
-        // Remove from localStorage
         localStorage.removeItem('downloadHistory');
-        
-        // Clear the history list in the DOM
+        sessionStorage.removeItem('sessionStarted');
         const historyList = document.getElementById('downloadHistory');
-        historyList.innerHTML = `
-            <div class="empty-history">
-                <p>No recent downloads</p>
-            </div>
-        `;
+        if (historyList) {
+            historyList.innerHTML = `
+                <div class="empty-history">
+                    <p>No recent downloads</p>
+                </div>
+            `;
+        }
     }
 
     function loadDownloadHistory() {
         const historyList = document.getElementById('downloadHistory');
+        if (!historyList) return; // Exit if element doesn't exist
+    
+        const isNewSession = !sessionStorage.getItem('sessionStarted');
+        if (isNewSession) {
+            clearDownloadHistory();
+            sessionStorage.setItem('sessionStarted', 'true');
+            return;
+        }
+    
         const savedHistory = JSON.parse(localStorage.getItem('downloadHistory') || '[]');
         
         // If no saved history, ensure empty state
@@ -782,20 +791,24 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Clear history on page load/refresh
-    window.addEventListener('load', function() {
-        // Option 1: Clear history every time page loads
-        clearDownloadHistory();
-
-        // Option 2: Only clear if it's a new session
+    if (currentPage === 'download') {
+        // Clear history on page load/refresh
         const isNewSession = !sessionStorage.getItem('sessionStarted');
         if (isNewSession) {
             clearDownloadHistory();
             sessionStorage.setItem('sessionStarted', 'true');
         }
 
-        // Then load any persisting history
+        // Load any persisting history
         loadDownloadHistory();
-    });
+        const formatCards = document.querySelectorAll('.format-card');
+        formatCards.forEach(card => {
+            const icon = card.querySelector('.format-icon');
+            if (icon) {
+                card.setAttribute('data-original-icon', icon.innerHTML);
+            }
+        });
+    }
     
 });
 

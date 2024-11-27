@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from src.metadata import TikTokMetaData
 from src.scraper import get_user_info
-from src.analytics import get_top_videos,get_trends_data,get_performance_data,get_active_days_data,get_duration_analysis,get_Engagement_data,get_user_info_fromdb,download_fromdb
+from src.analytics import get_top_videos,get_trends_data,get_performance_data,get_active_days_data,get_duration_analysis,get_Engagement_data,get_user_info_fromdb,download_fromdb,get_analytics_table
 from src.database import init_db, Video,get_cached_user_data,store_user_data,store_comment, get_comments
 import pandas as pd
 import logging
@@ -158,6 +158,7 @@ def get_overview_data(username):
         # Get engagement data
         engagement_response = get_Engagement_data(username)
         engagement_data = engagement_response.json
+        print(engagement_data)
 
         response_data = {
             'status': 'success',
@@ -169,6 +170,28 @@ def get_overview_data(username):
             'duration_breakdown' : duration_data,
             'engagement_section' : engagement_data,
 
+        }
+        return jsonify(response_data)
+        
+    except Exception as e:
+        return jsonify({'status': 'error','message': str(e)}), 500
+    
+@app.route('/api/analytics/<username>')
+def get_analytics_data(username):
+    try:
+        # Get profile data
+        profile_response = get_user_info_fromdb(username)
+        profile_data = profile_response.json
+ 
+        # Get trends data
+        analytics_response = get_analytics_table(username)
+        analytics_data = analytics_response.json
+        print(analytics_data)
+
+        response_data = {
+            'status': 'success',
+            'user_info': profile_data['user_info']['profile_data'],
+            'trends': analytics_data
         }
         return jsonify(response_data)
         
