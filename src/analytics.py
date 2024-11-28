@@ -118,31 +118,58 @@ def get_analytics_table(username):
                 'status': 'error',
                 'message': 'No videos found for the user'
             }), 404
-            
+        
+
+        # Calculate median views first
+        sorted_videos = sorted(videos, key=lambda v: int(v.video_metadata.get('view_count', 0)))
+        n = len(sorted_videos)
+        median_views = int(sorted_videos[n//2].video_metadata.get('view_count', 0)) if n % 2 != 0 else \
+            (int(sorted_videos[n//2 - 1].video_metadata.get('view_count', 0)) + 
+            int(sorted_videos[n//2].video_metadata.get('view_count', 0))) / 2
+
+
         # Process all videos
         all_videos = []
         for video in videos:
             video_data = video.video_metadata 
+            
+            # Handle timestamp parsing
+            timestamp_str = video_data.get('timestamp')
+            formatted_date = None
+            
+            if timestamp_str:
+                for fmt in ['%d/%m/%y %H:%M:%S', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S']:
+                    try:
+                        timestamp = datetime.strptime(timestamp_str, fmt)
+                        formatted_date = timestamp.strftime('%d-%m-%Y')
+                        break
+                    except ValueError:
+                        continue
+            
+            # Multiplier compared to median data
+            views = int(video_data.get('view_count', 0))
+            multiplier = views / median_views
+            multiplier_color = "Green" if multiplier > 1 else "Red"
+            
             all_videos.append({
                 'id': video_data.get('id', ''),
                 'thumbnail': video_data.get('thumbnail', ''),
+                'firstthumbnail': video_data.get('firstthumbnail', ''),
                 'title': video_data.get('title', ''),
-                'views': int(video_data.get('view_count', 0)),
+                'views': views,
                 'like_count': int(video_data.get('like_count', 0)),
                 'comment_count': int(video_data.get('comment_count', 0)),
                 'shares': int(video_data.get('repost_count', 0)),
-                'original_url': video_data.get('original_url', '')
+                'original_url': video_data.get('original_url', ''),
+                'duration': video_data.get('duration', 0),
+                'upload_date': formatted_date or '',
+                'multiplier': round(multiplier, 1),
+                'multiplier_color': multiplier_color
             })
 
         # Calculate average views
         avg_views = sum(video['views'] for video in all_videos) / len(all_videos)
 
-        # Calculate median views
-        sorted_views = sorted(video['views'] for video in all_videos)
-        n = len(sorted_views)
-        median_views = sorted_views[n//2] if n % 2 != 0 else \
-            (sorted_views[n//2 - 1] + sorted_views[n//2]) / 2
-        
         # Calculate viral percentage (videos with views > 10x median)
         viral_threshold = median_views * 10
         viral_videos = [video for video in all_videos if video['views'] > viral_threshold]
@@ -196,7 +223,8 @@ def get_top_videos(username):
                 'like_count': int(video_data.get('like_count', 0)),
                 'comment_count': int(video_data.get('comment_count', 0)),
                 'shares': int(video_data.get('repost_count', 0)),
-                'original_url': video_data.get('original_url', '')
+                'original_url': video_data.get('original_url', ''),
+                'duration': video_data.get('duration', 0),
             })
         
         # Sort by views and get top 3

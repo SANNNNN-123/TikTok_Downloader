@@ -303,7 +303,7 @@ body {
     border: 1px solid #ddd;
     border-radius: 5px;
     padding: 20px;
-    margin-top: 20px;
+    margin-top: 1px;
 }
 
 .profile-header {
@@ -769,57 +769,63 @@ body {
     margin-left: 10px;
 }
 
-.info-icon { 
-    touch-action: none; 
-    margin-left: 6px; 
-    color: #b8b7b7; 
-    font-size: 7px; 
-    line-height: 1; 
-    width: 6px; /* Reduced from 8px */
-    height: 6px; /* Reduced from 8px */
-    border-radius: 50%; /* Added to ensure circular shape */
-    position: relative; 
-    display: inline-block; 
-} 
 
-.tooltip { 
-    visibility: hidden; 
-    width: 200px; 
-    background-color: var(--secondary-dark); 
-    color: #fff; 
-    text-align: center; 
-    border-radius: 4px; 
-    padding: 5px; 
-    position: absolute; 
-    z-index: 1; 
-    bottom: 125%; 
-    left: 50%; 
-    margin-left: -100px; 
-    opacity: 0; 
-    transition: opacity 0.3s; 
-    font-size: 12px; 
-    line-height: 1.4; 
-} 
 
-.tooltip::after { 
-    content: ""; 
-    position: absolute; 
-    top: 100%; 
-    left: 50%; 
-    margin-left: -5px; 
-    border-width: 5px; 
-    border-style: solid; 
-    border-color: #555 transparent transparent transparent; 
-} 
-
-.info-icon:hover { 
-    color: #888; 
-} 
-
-.info-icon:hover .tooltip { 
-    visibility: visible; 
-    opacity: 1; 
+.info-icon {
+    display: inline-flex;
+    align-items: right;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-left: 4px;
+    top: 9px;
+    background-color: #f0f0f0;
+    position: relative;
 }
+
+.info-icon i {
+    width: 10px;
+    height: 10px;
+    color: #666;
+}
+
+.tooltip {
+    visibility: hidden;
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
+.info-icon:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+
 
 .rating-high { background-color: #dbfced; color: #047857; }
 .rating-medium { background-color: #FFFBEB; color: #B45309; }
@@ -828,7 +834,6 @@ body {
 /* Download Page Styles */
 .download-container {
     display: grid;
-    grid-template-columns: 2fr 1fr;
     gap: 24px;
     margin-top: 20px;
     max-width: 100%;
@@ -839,6 +844,7 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
     width: 100%;
+    max-width: 100%;
 }
 
 .format-card {
@@ -852,6 +858,7 @@ body {
     box-shadow: var(--card-shadow);
     transition: all 0.2s ease;
     border: 2px solid transparent;
+    max-width: 100%;
 }
 
 .format-card:hover {
@@ -923,6 +930,29 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    overflow-y: auto; 
+    flex-grow: 1; 
+    padding-right: 8px; 
+    max-height: 200px;
+}
+
+/* the scrollbar */
+.history-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.history-list::-webkit-scrollbar-track {
+    background: var(--accent-gray);
+    border-radius: 4px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background: var(--secondary-dark);
+    border-radius: 4px;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
 }
 
 .history-item {
@@ -974,7 +1004,7 @@ body {
     box-shadow: var(--hover-shadow);
 }
 
-.download-spinner {
+/* .download-spinner {
     width: 40px;
     height: 40px;
     border: 4px solid var(--accent-gray);
@@ -982,6 +1012,14 @@ body {
     border-radius: 50%;
     margin: 0 auto 16px;
     animation: spin 1s linear infinite;
+} */
+
+.download-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000; /* Ensures it's above other elements */
 }
 
 @keyframes spin {
@@ -1124,9 +1162,6 @@ body {
 
 
 /* Comments navbar */
-
-/* Add these styles to the existing styles.css file */
-
 .comments-container {
     max-width: 600px;
     margin: 0 auto;
@@ -1324,6 +1359,7 @@ body {
     font-size: 0.875rem;
     margin: 0 0 8px 0;
     font-weight: 500;
+    gap: 6px;
 }
 
 .metric-value {
@@ -1338,8 +1374,9 @@ body {
     margin-top: 4px;
 }
 
+
 /* Middle Container */
-.graph-container {
+.analyticsmiddle-container {
     background: white;
     border-radius: 12px;
     padding: 20px;
@@ -1368,4 +1405,246 @@ body {
     margin: 0 0 16px 0;
     font-size: 1rem;
     color: #333;
+}
+
+/* Video analytics */
+.table-container {
+    width: 100%;
+    height: 400px;
+    overflow-y: auto;
+    border-radius: 8px;
+}
+
+.analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 14px;
+}
+
+.analytics-table th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    padding: 12px;
+    font-weight: 600;
+    color: #666;
+    border-bottom: 2px solid #eee;
+}
+
+.analytics-table th:first-child {
+    text-align: left; 
+}
+
+.analytics-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.analytics-table th.sortable:hover {
+    background: #eee;
+}
+
+.analytics-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+
+.analytics-table tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.analytics-table .username-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.analytics-table .username-cell .username {
+    font-size: 12px;
+}
+
+.analytics-table td:first-child {
+    text-align: left;
+}
+
+.analytics-table .thumbnail {
+    width: 32px;
+    height: 38px;
+    border-radius: 4px;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.analytics-table .username-cell .username {
+    font-size: 16px;
+    text-align: left;
+}
+
+.analytics-table .multiplier {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.analytics-table .multiplier.high {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.analytics-table .multiplier.medium {
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.analytics-table .multiplier.low {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+/* Planning to add date-range */
+.date-range {
+    color: #6B7280;
+    font-size: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #E5E7EB;
+    position: relative;
+}
+
+/* Most Viral Video Card */
+.viral-video {
+    display: flex;
+    flex-direction: column;
+}
+
+.viral-video img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.viral-video-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.viral-video-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.viral-video-title {
+    font-weight: 500;
+    color: #111827;
+}
+
+.upload-info {
+    color: #6B7280;
+    font-size: 13px;
+}
+
+.multiplier-badge {
+    background: #DCFCE7;
+    color: #166534;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.stats-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stat-label {
+    color: #6B7280;
+    font-size: 13px;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: #000;
+}
+
+/* Distribution Analysis Cards */
+.distribution-container {
+    margin-top: 12px;
+}
+
+.distribution-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    color: #6B7280;
+    font-size: 13px;
+}
+
+.distribution-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 12px;
+}
+
+.distribution-label {
+    min-width: 80px;
+    color: #374151;
+    font-size: 13px;
+}
+
+.distribution-bar-container {
+    flex-grow: 1;
+    height: 24px;
+    background: #F3F4F6;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.distribution-bar {
+    height: 100%;
+    background: #93C5FD;
+    transition: width 0.3s ease;
+}
+
+.distribution-value {
+    min-width: 60px;
+    text-align: right;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.optimal-length {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #E5E7EB;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #374151;
+    font-size: 13px;
+}
+
+.optimal-length-value {
+    font-weight: 500;
 }

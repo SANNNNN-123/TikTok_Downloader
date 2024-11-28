@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 messageElement.className = 'alert alert-warning';
                                 messageElement.innerHTML = `
                                     <h4 class="alert-heading">Private Profile</h4>
-                                    <p>The profile @${username} is private. We can see basic profile information but cannot access their videos.</p>
+                                    <p>The profile @${username} is private.</p>
                                 `;
                                 
                                 // Still show profile info if available
@@ -258,8 +258,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Analytic page functionality
     if (currentPage === 'analytics') {
+        // const isNewSession = !sessionStorage.getItem('sessionStarted');
+        
+        // if (isNewSession) {
+        //     sessionStorage.setItem('sessionStarted', 'true');
+        //     localStorage.removeItem('currentUsername');
+        // }
+        
         const username = localStorage.getItem('currentUsername');
-        loadAnalyticsData(username);
+        
+        if (username) {
+            loadAnalyticsData(username);
+        } else {
+            hideLoading();
+            window.location.href = '/';
+        }
     }
 
     function showLoading() {
@@ -409,11 +422,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 updateProfileInfo(data.user_info,data.trends);
     
                 // Update metrics
-                console.log("trends", data.trends)
                 updateMetrics(data.trends);
     
                 // Update graph container (placeholder for now)
-                graphContainer.innerHTML = '<p>Graph will be implemented here</p>';
+                updateGraphContainer(data.user_info,data.trends);
     
                 // Update analytics grid
                 updateAnalyticsGrid(data.trends);
@@ -450,32 +462,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const metricCards = document.querySelectorAll('.metric-card');
         
         const metrics = [
-            { label: 'Viral Videos', value: trends.viral_percentage, subtext: `${trends.viral_percentage || 0}%` },
-            { label: 'Avg Views', value: formatNumber(trends.avg_views || 0) },
-            { label: 'Median Views', value: formatNumber(trends.median_views || 0) },
-            { label: 'Most Viewed', value: formatNumber(trends.most_views || 0) }
-        ];
-    
-        metricCards.forEach((card, index) => {
-            const metric = metrics[index];
-            card.querySelector('h3').textContent = metric.label;
-            card.querySelector('.metric-value').textContent = metric.value;
-            if (metric.subtext) {
-                let subtextElement = card.querySelector('.metric-subtext');
-                if (!subtextElement) {
-                    subtextElement = document.createElement('div');
-                    subtextElement.className = 'metric-subtext';
-                    card.appendChild(subtextElement);
-                }
-                subtextElement.textContent = metric.subtext;
-            }
-        });
-    }
-    
-    function updateMetrics(trends) {
-        const metricCards = document.querySelectorAll('.metric-card');
-        
-        const metrics = [
             { label: 'Viral Videos', value: trends.viral_video_count || 0, subtext: `${(trends.viral_percentage || 0).toFixed(2)}%` },
             { label: 'Avg Views', value: formatNumberV2(trends.avg_views || 0) },
             { label: 'Median Views', value: formatNumberV2(trends.median_views || 0) },
@@ -496,47 +482,339 @@ document.addEventListener('DOMContentLoaded', function () {
                 subtextElement.textContent = metric.subtext;
             }
         });
+        lucide.createIcons();
+    }
+
+    function updateGraphContainer(userinfo, trends) {
+        if (!trends || !trends.videos) {
+            document.querySelector('.graph-container').innerHTML = '<p>No video data available</p>';
+            return;
+        }
+    
+        const tableBody = document.getElementById('videosTableBody');
+        let currentSort = {
+            column: null,
+            ascending: true
+        };
+    
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+            return num.toString();
+        }
+    
+        function getMultiplierClass(multiplier, multiplier_color) {
+            let valueClass;
+            if (multiplier >= 2) {
+                valueClass = 'high';
+            } else if (multiplier >= 1) {
+                valueClass = 'medium';
+            } else {
+                valueClass = 'low';
+            }
+    
+            let colorClass;
+            switch (multiplier_color.toLowerCase()) {
+                case 'red':
+                    colorClass = 'text-red-500';
+                    break;
+                case 'green':
+                    colorClass = 'text-green-500';
+                    break;
+                default:
+                    colorClass = 'text-gray-500';
+            }
+    
+            return `${valueClass} ${colorClass}`;
+        }
+    
+        function getDurationClass(seconds) {
+            if (!seconds || seconds === '-') return '-';
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+    
+        function getSortValue(video, column) {
+            switch (column) {
+                case 'views':
+                    return video.views;
+                case 'likes':
+                    return video.like_count;
+                case 'comments':
+                    return video.comment_count;
+                case 'shares':
+                    return video.shares;
+                case 'multiplier':
+                    return video.multiplier;
+                case 'date':
+                    const [day, month, year] = video.upload_date.split('-').map(Number);
+                    return new Date(year, month - 1, day).getTime();
+                case 'length':
+                    return video.duration || 0;
+                default:
+                    return 0;
+            }
+        }
+    
+        function renderTable(data, sortColumn = null, ascending = true) {
+            const sortedData = [...data];
+    
+            if (sortColumn) {
+                sortedData.sort((a, b) => {
+                    const aVal = getSortValue(a, sortColumn);
+                    const bVal = getSortValue(b, sortColumn);
+    
+                    if (aVal === bVal) return 0;
+                    return ascending ? (aVal - bVal) : (bVal - aVal);
+                });
+            }
+    
+            tableBody.innerHTML = sortedData.map(video => `
+                <tr class="video-row" data-original-url="${video.original_url || ''}">
+                    <td>
+                        <div class="username-cell">
+                            <img src="${video.firstthumbnail}" alt="" class="thumbnail">
+                            <span class="username">${userinfo.username}</span>
+                        </div>
+                    </td>
+                    <td>${formatNumber(video.views)}</td>
+                    <td>${formatNumber(video.like_count)}</td>
+                    <td>${formatNumber(video.comment_count)}</td>
+                    <td>${formatNumber(video.shares)}</td>
+                    <td>
+                        <span class="multiplier ${getMultiplierClass(video.multiplier, video.multiplier_color)}">
+                            x${video.multiplier.toFixed(1)}
+                        </span>
+                    </td>
+                    <td>${video.upload_date}</td>
+                    <td>${getDurationClass(video.duration)}</td>
+                </tr>
+            `).join('');
+    
+            // Add click event listeners to video rows
+            document.querySelectorAll('.video-row').forEach(videoRow => {
+                videoRow.addEventListener('click', () => {
+                    const originalUrl = videoRow.dataset.originalUrl;
+                    if (originalUrl) {
+                        window.open(originalUrl, '_blank');
+                    }
+                });
+            });
+    
+            // Update sort indicators
+            document.querySelectorAll('.analytics-table th.sortable').forEach(th => {
+                const headerText = th.textContent.replace(' ↑', '').replace(' ↓', '');
+                th.textContent = headerText;
+                if (th.dataset.sort === sortColumn) {
+                    th.textContent += ascending ? ' ↑' : ' ↓';
+                }
+            });
+        }
+    
+        // Initial render
+        renderTable(trends.videos);
+    
+        // Add click event listeners to sortable headers
+        document.querySelectorAll('.analytics-table th.sortable').forEach(th => {
+            th.addEventListener('click', () => {
+                const column = th.dataset.sort;
+                
+                if (currentSort.column === column) {
+                    currentSort.ascending = !currentSort.ascending;
+                } else {
+                    currentSort.column = column;
+                    currentSort.ascending = true;
+                }
+    
+                renderTable(trends.videos, column, currentSort.ascending);
+            });
+        });
+    }
+
+    function calculateOptimalLength(videos) {
+        if (!videos || videos.length === 0) return '0.0s';
+    
+        // Group videos by duration ranges (rounded to nearest second)
+        const durationGroups = {};
+        videos.forEach(video => {
+            const duration = Math.round(video.duration);
+            if (!durationGroups[duration]) {
+                durationGroups[duration] = {
+                    totalViews: 0,
+                    count: 0
+                };
+            }
+            durationGroups[duration].totalViews += video.views;
+            durationGroups[duration].count++;
+        });
+    
+        // Calculate average views for each duration
+        let maxAverageViews = 0;
+        let optimalDuration = 0;
+    
+        Object.entries(durationGroups).forEach(([duration, data]) => {
+            const averageViews = data.totalViews / data.count;
+            if (averageViews > maxAverageViews) {
+                maxAverageViews = averageViews;
+                optimalDuration = parseInt(duration);
+            }
+        });
+    
+        return `${optimalDuration.toFixed(1)}s`;
     }
     
     function updateAnalyticsGrid(trends) {
-        const analyticsCards = document.querySelectorAll('.analytics-card');
+        if (!trends || !trends.videos) {
+            console.error('No video data available');
+            return;
+        }
+    
+        const dateRange = '';
+    
+        // Find most viral video
+        const mostViralVideo = trends.videos.reduce((max, video) => 
+            (video.multiplier > (max?.multiplier || 0)) ? video : max, null);
+    
+        // Calculate distributions
+        const multiplierRanges = {
+            'Below 1x': 0,
+            '1x-5x': 0,
+            '5x-10x': 0,
+            '10x-25x': 0,
+            '25x-50x': 0,
+            '50x-100x': 0,
+            '100x+': 0
+        };
+    
+        const durationRanges = {
+            '0-10': { count: 0, views: 0 },
+            '10-15': { count: 0, views: 0 },
+            '15-25': { count: 0, views: 0 },
+            '25-40': { count: 0, views: 0 },
+            '40-60': { count: 0, views: 0 },
+            '60+': { count: 0, views: 0 }
+        };
+    
+        // Process videos
+        trends.videos.forEach(video => {
+            // Multiplier distribution
+            if (video.multiplier < 1) multiplierRanges['Below 1x']++;
+            else if (video.multiplier < 5) multiplierRanges['1x-5x']++;
+            else if (video.multiplier < 10) multiplierRanges['5x-10x']++;
+            else if (video.multiplier < 25) multiplierRanges['10x-25x']++;
+            else if (video.multiplier < 50) multiplierRanges['25x-50x']++;
+            else if (video.multiplier < 100) multiplierRanges['50x-100x']++;
+            else multiplierRanges['100x+']++;
+    
+            // Duration distribution
+            const duration = video.duration;
+            if (duration <= 10) durationRanges['0-10'].views += video.views;
+            else if (duration <= 15) durationRanges['10-15'].views += video.views;
+            else if (duration <= 25) durationRanges['15-25'].views += video.views;
+            else if (duration <= 40) durationRanges['25-40'].views += video.views;
+            else if (duration <= 60) durationRanges['40-60'].views += video.views;
+            else durationRanges['60+'].views += video.views;
+        });
+    
+        // Calculate max values for scaling
+        const maxMultiplierCount = Math.max(...Object.values(multiplierRanges));
+        const maxViews = Math.max(...Object.values(durationRanges).map(d => d.views));
+    
         
-        // Most Viral Video
-        if (trends.most_viral_video) {
-            analyticsCards[0].innerHTML = `
+
+        // Update Most Viral Video card
+        const mostViralCard = document.querySelector('.analytics-card:nth-child(1)');
+        if (mostViralVideo && mostViralCard) {
+            mostViralCard.innerHTML = `
                 <h3>Most Viral Video</h3>
+                <div class="date-range">${dateRange}</div>
                 <div class="viral-video">
-                    <img src="${trends.most_viral_video.thumbnail}" alt="Most viral video thumbnail">
+                    <img src="${mostViralVideo.firstthumbnail}" alt="Thumbnail">
                     <div class="viral-video-info">
-                        <p>${trends.most_viral_video.title}</p>
-                        <p>Views: ${formatNumber(trends.most_viral_video.views)}</p>
-                        <p>Likes: ${formatNumber(trends.most_viral_video.like_count)}</p>
+                        <div class="viral-video-header">
+                            <div class="upload-info">Uploaded ${mostViralVideo.upload_date}</div>
+                            <span class="multiplier-badge">x${mostViralVideo.multiplier.toFixed(1)}</span>
+                        </div>
+                        <div class="stats-list">
+                            <div class="stat-item">
+                                <span class="stat-label">Views</span>
+                                <span class="stat-value">${formatNumber(mostViralVideo.views)}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Likes</span>
+                                <span class="stat-value">${formatNumber(mostViralVideo.like_count)}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Comments</span>
+                                <span class="stat-value">${formatNumber(mostViralVideo.comment_count)}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Shares</span>
+                                <span class="stat-value">${formatNumber(mostViralVideo.shares)}</span>
+                            </div>
+                        </div>
                     </div>
+                </div>
+            `;
+            mostViralCard.addEventListener('click', () => {
+                if (mostViralVideo.original_url) {
+                    window.open(mostViralVideo.original_url, '_blank');
+                }
+            });
+        }
+    
+        // Update Virality Median Analysis card
+        const viralityCard = document.querySelector('.analytics-card:nth-child(2)');
+        if (viralityCard) {
+            const totalVideos = Object.values(multiplierRanges).reduce((a, b) => a + b, 0);
+            viralityCard.innerHTML = `
+                <h3>Virality Median Analysis</h3>
+                <div class="date-range">${dateRange}</div>
+                <div class="distribution-container">
+                    <div class="distribution-header">
+                        <span>Total Videos</span>
+                        <span>${totalVideos}</span>
+                    </div>
+                    ${Object.entries(multiplierRanges).map(([range, count]) => `
+                        <div class="distribution-row">
+                            <span class="distribution-label">${range}</span>
+                            <div class="distribution-bar-container">
+                                <div class="distribution-bar" style="width: ${(count/maxMultiplierCount*100)}%"></div>
+                            </div>
+                            <span class="distribution-value">${count}</span>
+                        </div>
+                    `).join('')}
                 </div>
             `;
         }
     
-        // Virality Median Analysis
-        if (trends.virality_median) {
-            analyticsCards[1].innerHTML = `
-                <h3>Virality Median Analysis</h3>
-                <ul>
-                    ${Object.entries(trends.virality_median).map(([key, value]) => `
-                        <li>${key}: ${value}</li>
-                    `).join('')}
-                </ul>
-            `;
-        }
-    
-        // Duration Analysis
-        if (trends.duration_analysis) {
-            analyticsCards[2].innerHTML = `
+        // Update Duration Analysis card
+        const durationCard = document.querySelector('.analytics-card:nth-child(3)');
+        if (durationCard) {
+            const optimalLength = calculateOptimalLength(trends.videos);
+            durationCard.innerHTML = `
                 <h3>Duration Analysis</h3>
-                <ul>
-                    ${Object.entries(trends.duration_analysis).map(([key, value]) => `
-                        <li>${key}: ${formatNumber(value)} views</li>
+                <div class="date-range">${dateRange}</div>
+                <div class="distribution-container">
+                    <div class="distribution-header">
+                        <span>Video Duration Range (in seconds)</span>
+                        <span>Average Views</span>
+                    </div>
+                    ${Object.entries(durationRanges).map(([range, data]) => `
+                        <div class="distribution-row">
+                            <span class="distribution-label">${range}</span>
+                            <div class="distribution-bar-container">
+                                <div class="distribution-bar" style="width: ${(data.views/maxViews*100)}%"></div>
+                            </div>
+                            <span class="distribution-value">${formatNumber(data.views)}</span>
+                        </div>
                     `).join('')}
-                </ul>
+                    <div class="optimal-length">
+                        <span>Optimal Length</span>
+                        <span class="optimal-length-value">${optimalLength}</span>
+                    </div>
+                </div>
             `;
         }
     }
@@ -968,6 +1246,31 @@ document.addEventListener('DOMContentLoaded', function () {
                 card.setAttribute('data-original-icon', icon.innerHTML);
             }
         });
+    }
+
+    function getMultiplierClass(multiplier, multiplier_color) {
+        let valueClass;
+        if (multiplier >= 2) {
+            valueClass = 'high';
+        } else if (multiplier >= 1) {
+            valueClass = 'medium';
+        } else {
+            valueClass = 'low';
+        }
+
+        let colorClass;
+        switch (multiplier_color.toLowerCase()) {
+            case 'red':
+                colorClass = 'text-red-500';
+                break;
+            case 'green':
+                colorClass = 'text-green-500';
+                break;
+            default:
+                colorClass = 'text-gray-500';
+        }
+
+        return `${valueClass} ${colorClass}`;
     }
     
 });

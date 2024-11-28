@@ -14,7 +14,12 @@
             </div>
             <div class="metrics-grid">
                 <div class="metric-card">
-                    <h3>Viral Videos</h3>
+                    <h3>Viral Videos
+                        <span class="info-icon">
+                            <i data-lucide="info"></i>
+                            <span class="tooltip">Videos tracked exceeded 10x the median performance</span>
+                        </span>
+                    </h3>
                     <div class="metric-value"></div>
                     <div class="metric-subtext"></div>
                 </div>
@@ -35,8 +40,26 @@
     </div>
 
     <!-- Middle Container (Graph Area) -->
-    <div class="graph-container">
-        <!-- Graph content will be added later -->
+    <div class="analyticsmiddle-container">
+        <div class="table-container">
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th class="sortable" data-sort="views">Views ↕</th>
+                        <th class="sortable" data-sort="likes">Likes ↕</th>
+                        <th class="sortable" data-sort="comments">Comments ↕</th>
+                        <th class="sortable" data-sort="shares">Shares ↕</th>
+                        <th class="sortable" data-sort="multiplier">Multiplier ↕</th>
+                        <th class="sortable" data-sort="date">Uploaded ↕</th>
+                        <th class="sortable" data-sort="length">Length ↕</th>
+                    </tr>
+                </thead>
+                <tbody id="videosTableBody">
+                    <!-- Table rows will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Bottom Analytics Grid -->

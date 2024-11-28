@@ -107,6 +107,7 @@ class TikTokMetaData:
             'repost_count': video.get('repost_count', 0),
             'comment_count': video.get('comment_count', 0),
             'thumbnail': self._get_second_thumbnail(video.get('thumbnails', [])),
+            'firstthumbnail' : self._get_first_thumbnail(video.get('thumbnails', [])),
         }
 
     def _format_timestamp(self, timestamp: int) -> str:
@@ -128,6 +129,17 @@ class TikTokMetaData:
             if len(thumbnails) >= 2:
                 return thumbnails[1].get('url', '')
             elif len(thumbnails) == 1:
+                return thumbnails[0].get('url', '')
+            return ''
+        except Exception:
+            return ''
+    
+    def _get_first_thumbnail(self, thumbnails: List[Dict]) -> str:
+        """
+        Retrieves the URL of the first thumbnail, if available.
+        """
+        try:
+            if len(thumbnails):
                 return thumbnails[0].get('url', '')
             return ''
         except Exception:
