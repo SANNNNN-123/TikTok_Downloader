@@ -108,9 +108,12 @@ document.addEventListener('DOMContentLoaded', function () {
     lucide.createIcons();
 
     // Search functionality
+    // Search functionality
+    // Search functionality
     if (searchButton && searchInput && searchResults) {
+
         searchButton.addEventListener('click', async function (e) {
-            e.preventDefault();
+            e.preventDefault()
             const username = searchInput.value.trim();
     
             if (username) {

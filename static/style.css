@@ -1526,6 +1526,7 @@ body {
     object-fit: cover;
     border-radius: 6px;
     margin-bottom: 12px;
+    cursor: pointer;
 }
 
 .viral-video-info {
