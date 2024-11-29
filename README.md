@@ -2,8 +2,7 @@
 
 ## Description
 
-There is no official TikTok API. Thus writing script to scrape user videos metadata
-Simple website and visualization that allows users extract metadata from TikTok user profiles and downloading the data in various formats.
+There is no official TikTok API.  Thus i have created simple website that can processed any input username public TikTok profile provided overview and video analytics for that profilethat allows users  download the data in JSON/CSV/EXCEL.
 
 ## Technologies Used
 
