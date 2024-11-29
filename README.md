@@ -1,4 +1,4 @@
-# TikTok Metadata Scraper
+# TikTok Analytics
 
 ## Description
 
