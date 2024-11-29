@@ -3,13 +3,13 @@
 ## Description
 
 There is no official TikTok API. Thus writing script to scrape user videos metadata
-Simple UI that allows users extract metadata from TikTok user profiles and downloading the data in various formats.
+Simple website and visualization that allows users extract metadata from TikTok user profiles and downloading the data in various formats.
 
 ## Technologies Used
 
 - Python 3.12
 - Flask
-- yt-dlp
+- Playwright, yt-dlp
 - HTML/CSS/JavaScript
 - Docker
 
@@ -25,6 +25,7 @@ Simple UI that allows users extract metadata from TikTok user profiles and downl
    python -m venv myenv
    source myenv/bin/activate   # On Windows: myenv\Scripts\activate
    pip install -r requirements.txt
+   playwright install
    python app.py
 
 2. **Run via Docker**
@@ -35,6 +36,7 @@ Simple UI that allows users extract metadata from TikTok user profiles and downl
     docker build -t TikTok_Downloader .
     docker run -d -p 5000:5000 TikTok_Downloader
 
-
+### Demo
+https://github.com/user-attachments/assets/0affbb57-92c1-411f-86a1-2dbd497276b7
 
 
